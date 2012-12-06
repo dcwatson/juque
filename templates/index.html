@@ -1,0 +1,11 @@
+<html>
+<head>
+    <title>All Tracks</title>
+</head>
+<body>
+{% for track in tracks %}
+    {% ifchanged track.artist %}<h1>{{ track.artist }}</h1>{% endifchanged %}
+    <a class="track" href="{% url play track.pk %}">{{ track.name }}</a><br />
+{% endfor %}
+</body>
+</html>

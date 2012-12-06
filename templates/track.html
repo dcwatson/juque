@@ -1,0 +1,10 @@
+<html>
+<head>
+    <title>{{ track }}</title>
+</head>
+<body>
+    <h1>{{ track.artist }} - {{ track }}</h1>
+    <audio src="{% url playlist track.pk %}" controls autoplay></video>
+    <p><a href="{% url index %}">Back</a></p>
+</body>
+</html>
