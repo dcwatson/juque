@@ -37,3 +37,5 @@ nosetests.xml
 # Juque
 *.db
 media/*
+pybin
+samples

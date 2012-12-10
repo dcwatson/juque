@@ -112,6 +112,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
+    'juque.core',
     'juque.library',
 )
 
@@ -146,5 +147,4 @@ LOGGING = {
 
 JUQUE_SCAN_FILETYPES = ('mp3', 'm4a')
 JUQUE_SEGMENT_SIZE = 10
-JUQUE_OPENSSL_BINARY = '/usr/bin/openssl'
-JUQUE_FFMPEG_BINARY = '/Users/dcwatson/Downloads/ffmpeg'
+JUQUE_FFMPEG_BINARY = '/usr/bin/ffmpeg'

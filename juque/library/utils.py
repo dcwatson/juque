@@ -1,11 +1,17 @@
 from django.conf import settings
+from django.core.files.base import File, ContentFile
 from juque.library.models import Track, Artist, Album, Genre
+from juque.core.models import User
 from mutagen import id3, mp4, File as scan_file
+from Crypto.Cipher import AES
 import subprocess
+import binascii
 import datetime
+import tempfile
 import random
 import shutil
 import pytz
+import csv
 import os
 import re
 
@@ -33,8 +39,6 @@ TAG_MAPPERS = {
     }
 }
 
-HEX_CHARS = '0123456789ABCDEF'
-
 def map_tags(tags):
     mapper = TAG_MAPPERS[tags.__class__]
     mapped_tags = {}
@@ -48,19 +52,39 @@ def map_tags(tags):
 def get_match_name(name):
     return re.sub(r'[^a-zA-Z0-9]+', '_', name).lower().strip('_')
 
+def aes_pad(text, block_size, zero=False):
+    num = block_size - (len(text) % block_size)
+    ch = '\0' if zero else chr(num)
+    return text + (ch * num)
+
+def process_segments(temp_dir, track):
+    key = binascii.unhexlify(track.aes_key)
+    iv = binascii.unhexlify(track.aes_iv)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    seg_file = os.path.join(temp_dir, 'segments.csv')
+    storage = track.owner.get_storage()
+    print '   Processing segments...'
+    with open(seg_file, 'rb') as sf:
+        for row in csv.reader(sf):
+            seg_path = 'tracks/%s/segments/%s' % (track.pk, row[0])
+            with open(os.path.join(temp_dir, row[0]), 'rb') as f:
+                data = cipher.encrypt(aes_pad(f.read(), cipher.block_size))
+                seg_path = storage.save(seg_path, ContentFile(data))
+                track.segments.create(start_time=float(row[1]), end_time=float(row[2]), file_path=seg_path)
+
 def process_track(file_path, track):
     file_name = os.path.basename(file_path)
+    temp_dir = tempfile.mkdtemp(suffix='.juque')
+    print 'Created temp_dir', temp_dir
     _base, ext = os.path.splitext(file_name)
-    new_path = os.path.join(track.media_root, 'source%s' % ext)
-    if not os.path.exists(track.media_root):
-        # If the track media directory doesn't exist, create it and copy the source file into it.
-        os.makedirs(track.media_root)
-        # Copy the source file into the track's media root.
-        print 'Copying %s to %s' % (file_name, track.media_root)
-        shutil.copy(file_path, new_path)
+    track.file_path = 'tracks/%s/source%s' % (track.pk, ext)
+    storage = track.owner.get_storage()
+    with open(file_path, 'rb') as f:
+        track.file_path = storage.save(track.file_path, File(f))
+    # Now split the file into segments.
     args = [
         settings.JUQUE_FFMPEG_BINARY,
-        '-i', new_path,
+        '-i', file_path,
         '-acodec', 'mp3',
         '-ab', '128k',
         '-map', '0:0',
@@ -72,33 +96,18 @@ def process_track(file_path, track):
         '%04d.ts',
     ]
     print 'Encoding %s as 128k MP3 segments' % file_name
-    subprocess.call(args, cwd=track.media_root)
-    for name in os.listdir(track.media_root):
-        if not name.endswith('.ts'):
-            continue
-        args = [
-            settings.JUQUE_OPENSSL_BINARY,
-            'aes-128-cbc',
-            '-e',
-            '-in', name,
-            '-out', name + '.aes',
-            '-nosalt',
-            '-K', track.aes_key,
-            '-iv', track.aes_iv,
-        ]
-        print '  Encrypting %s -> %s.aes' % (name, name)
-        subprocess.call(args, cwd=track.media_root)
-        # Remove the unencrypted file, rename the encrypted file.
-        old_path = os.path.join(track.media_root, name)
-        new_path = os.path.join(track.media_root, name + '.aes')
-        os.unlink(old_path)
-        os.rename(new_path, old_path)
+    subprocess.call(args, cwd=temp_dir)
+    process_segments(temp_dir, track)
+    track.save()
+    shutil.rmtree(temp_dir)
 
-def create_track(file_path):
+def create_track(file_path, owner):
     meta = scan_file(file_path)
     tags = map_tags(meta.tags)
-    if 'title' not in tags:
-        raise Exception('No title for: %s' % file_path)
+    try:
+        title = tags['title']
+    except:
+        title = os.path.basename(file_path)
     artist = None
     album = None
     genre = None
@@ -126,10 +135,11 @@ def create_track(file_path):
             genre = Genre.objects.get(match_name=genre_match)
         except:
             genre = Genre.objects.create(name=genre_name, match_name=genre_match)
-    aes_key = ''.join([random.choice(HEX_CHARS) for i in range(32)])
-    aes_iv = ''.join([random.choice(HEX_CHARS) for i in range(32)])
+    aes_key = binascii.hexlify(os.urandom(16))
+    aes_iv = binascii.hexlify(os.urandom(16))
     return Track.objects.create(
-        name=tags['title'],
+        owner=owner,
+        name=title,
         length=meta.info.length,
         bitrate=meta.info.bitrate,
         sample_rate=meta.info.sample_rate,
@@ -140,12 +150,13 @@ def create_track(file_path):
         aes_iv=aes_iv,
     )
 
-def scan_directory(dir_path):
-    local_tz = pytz.timezone(settings.TIME_ZONE)
+def scan_directory(dir_path, owner=None):
+    if owner is None:
+        owner = User.objects.get()
     for root, dirs, files in os.walk(dir_path):
         for name in files:
             _base, ext = os.path.splitext(name)
             if ext[1:].lower() in settings.JUQUE_SCAN_FILETYPES:
-                file_path = os.path.join(root, name)
-                track = create_track(file_path)
+                file_path = os.path.abspath(os.path.join(root, name))
+                track = create_track(file_path, owner)
                 process_track(file_path, track)

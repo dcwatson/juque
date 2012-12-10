@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, render
 from django.conf import settings
 from django.http import HttpResponse
 from juque.library.models import Track
+import binascii
 
 def index(request):
     return render(request, 'index.html', {
@@ -24,7 +25,4 @@ def track_playlist(request, track_id):
 
 def track_key(request, track_id):
     track = get_object_or_404(Track, pk=track_id)
-    data = ''
-    for i in range(16):
-        data += chr(int(track.aes_key[i*2:(i*2)+2], 16))
-    return HttpResponse(data, content_type='application/octet-stream')
+    return HttpResponse(binascii.unhexlify(track.aes_key), content_type='application/octet-stream')

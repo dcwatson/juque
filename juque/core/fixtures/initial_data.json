@@ -1,0 +1,15 @@
+[
+    {
+        "pk": 1,
+        "model": "core.user",
+        "fields": {
+            "aws_secret_key": "",
+            "aws_access_key": "",
+            "name": "Administrator",
+            "storage_backend": "django.core.files.storage.FileSystemStorage",
+            "aws_bucket": "",
+            "password": "pbkdf2_sha256$10000$hG5rOToLWltZ$01TiI/4bEwOvqVX+n+uweUXjCbNnPJ7HmvDreIpjglE=",
+            "email": "admin@example.com"
+        }
+    }
+]

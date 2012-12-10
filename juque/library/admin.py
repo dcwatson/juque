@@ -1,9 +1,13 @@
 from django.contrib import admin
-from juque.library.models import Track, Artist, Album, Genre
+from juque.library.models import Track, Segment, Artist, Album, Genre
+
+class SegmentInline (admin.TabularInline):
+    model = Segment
 
 class TrackAdmin (admin.ModelAdmin):
     list_display = ('name', 'artist', 'album', 'genre', 'length', 'bitrate', 'sample_rate')
     ordering = ('artist', 'name')
+    inlines = [SegmentInline]
 
 class ArtistAdmin (admin.ModelAdmin):
     list_display = ('name', 'match_name')
