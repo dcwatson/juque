@@ -3,7 +3,7 @@ from django.conf import settings
 from juque.library.utils import scan_directory
 
 class Command (BaseCommand):
-    args = '<path>'
+    args = '<path> <path> ...'
 
     def handle(self, *args, **options):
         for root in args:

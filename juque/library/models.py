@@ -2,49 +2,58 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 from juque.core.models import User
-import csv
 import os
+import re
 
-class Artist (models.Model):
-    name = models.CharField(max_length=200, unique=True)
-    match_name = models.CharField(max_length=200, db_index=True)
+def get_match_name(name):
+    return re.sub(r'[^a-zA-Z0-9]+', '_', name).lower().strip('_')
+
+class MatchModel (models.Model):
+    name = models.CharField(max_length=200)
+    match_name = models.CharField(max_length=200, db_index=True, editable=False)
+
+    class Meta:
+        abstract = True
 
     def __unicode__(self):
         return self.name
 
-class Album (models.Model):
-    name = models.CharField(max_length=200)
+    def save(self, **kwargs):
+        self.match_name = get_match_name(self.name)
+        super(MatchModel, self).save(**kwargs)
+
+class Artist (MatchModel):
+    pass
+
+class Album (MatchModel):
     artist = models.ForeignKey(Artist, related_name='albums', null=True, blank=True)
-    match_name = models.CharField(max_length=200, db_index=True)
 
-    def __unicode__(self):
-        return self.name
+class Genre (MatchModel):
+    pass
 
-class Genre (models.Model):
-    name = models.CharField(max_length=200, unique=True)
-    match_name = models.CharField(max_length=200, db_index=True)
-
-    def __unicode__(self):
-        return self.name
-
-class Track (models.Model):
+class Track (MatchModel):
     owner = models.ForeignKey(User, related_name='tracks')
-    name = models.CharField(max_length=200)
-    length = models.FloatField()
-    bitrate = models.IntegerField()
-    sample_rate = models.IntegerField()
+    length = models.FloatField(editable=False)
+    bitrate = models.IntegerField(editable=False)
+    sample_rate = models.IntegerField(editable=False)
     artist = models.ForeignKey(Artist, related_name='tracks', null=True, blank=True)
     album = models.ForeignKey(Album, related_name='tracks', null=True, blank=True)
     genre = models.ForeignKey(Genre, related_name='tracks', null=True, blank=True)
     track_number = models.IntegerField(default=0)
-    file_path = models.TextField(blank=True)
-    # The key and IV used to encrypt the segment files.
-    aes_key = models.CharField(max_length=32)
-    aes_iv = models.CharField(max_length=32)
+    # File information
+    file_path = models.TextField(editable=False)
+    file_size = models.IntegerField(editable=False)
+    file_hash = models.CharField(max_length=32, unique=True, editable=False)
+    # Segment information (optional)
+    segment_aes_key = models.CharField(max_length=32, editable=False, blank=True)
+    segment_aes_iv = models.CharField(max_length=32, editable=False, blank=True)
+    # System information
     date_added = models.DateTimeField(default=timezone.now, editable=False)
+    date_modified = models.DateTimeField(editable=False)
 
-    def __unicode__(self):
-        return self.name
+    def save(self, **kwargs):
+        self.date_modified = timezone.now()
+        super(Track, self).save(**kwargs)
 
 class Segment (models.Model):
     track = models.ForeignKey(Track, related_name='segments')

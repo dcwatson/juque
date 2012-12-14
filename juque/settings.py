@@ -2,7 +2,7 @@ import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
-DEBUG = True
+DEBUG = False
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -145,6 +145,12 @@ LOGGING = {
     }
 }
 
-JUQUE_SCAN_FILETYPES = ('mp3', 'm4a')
+JUQUE_SCAN_EXTENSIONS = ('mp3', 'm4a')
+
+JUQUE_COPY_SOURCE = True
+
+JUQUE_SEGMENT = False
+JUQUE_SEGMENT_CODEC = 'mp3'
+JUQUE_SEGMENT_BITRATE = '96k'
 JUQUE_SEGMENT_SIZE = 10
 JUQUE_FFMPEG_BINARY = '/usr/bin/ffmpeg'

@@ -1,7 +1,7 @@
 Juque
 =====
 
-A personal downsampling HTTP Live Streaming (HLS) server written in Python.
+A personal jukebox server written in Python.
 
 Quick Start
 ===========

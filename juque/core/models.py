@@ -31,6 +31,7 @@ class User (models.Model):
                 'bucket': self.aws_bucket,
                 'access_key': self.aws_access_key,
                 'secret_key': self.aws_secret_key,
+                'secure_urls': False,
             }
         }.get(self.storage_backend, {})
         return cls(**params)

@@ -1,6 +1,7 @@
 from django.shortcuts import get_object_or_404, render
 from django.conf import settings
 from django.http import HttpResponse
+from django.contrib.sites.models import Site
 from juque.library.models import Track
 import binascii
 
@@ -17,7 +18,8 @@ def track_play(request, track_id):
 
 def track_playlist(request, track_id):
     track = get_object_or_404(Track, pk=track_id)
-    base_url = 'http://localhost:8000' # TODO: Sites? S3?
+    proto = 'http' if request.is_secure() else 'http'
+    base_url = '%s://%s' % (proto, Site.objects.get_current().domain)
     return render(request, 'playlist.m3u8', {
         'track': track,
         'base_url': base_url,

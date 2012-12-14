@@ -6,7 +6,7 @@
 
 {% for segment in track.segments.select_related %}
 #EXTINF:{{ segment.length }},
-{{ base_url }}{{ segment.url }}
+{{ segment.url|safe }}
 {% endfor %}
 
 #EXT-X-TARGETDURATION:11

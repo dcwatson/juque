@@ -1,13 +1,10 @@
 from django.contrib import admin
-from juque.library.models import Track, Segment, Artist, Album, Genre
-
-class SegmentInline (admin.TabularInline):
-    model = Segment
+from juque.library.models import Track, Artist, Album, Genre
 
 class TrackAdmin (admin.ModelAdmin):
     list_display = ('name', 'artist', 'album', 'genre', 'length', 'bitrate', 'sample_rate')
     ordering = ('artist', 'name')
-    inlines = [SegmentInline]
+    readonly_fields = [f.name for f in Track._meta.fields if not f.editable]
 
 class ArtistAdmin (admin.ModelAdmin):
     list_display = ('name', 'match_name')
