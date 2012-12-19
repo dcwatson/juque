@@ -5,11 +5,18 @@ from juque.core.models import User
 import os
 import re
 
-def get_match_name(name):
-    return re.sub(r'[^a-zA-Z0-9]+', '_', name).lower().strip('_')
+# TODO: This list should probably be shortened. I will need to tweak it after experimenting with a larger sample.
+UNIMPORTANT_WORDS = ('a', 'an', 'be', 'and', 'i', 'in', 'is', 'it', 'of', 'on', 'or', 'so', 'the', 'to')
+
+def slugify(name, strip_words=False):
+    name = name.lower()
+    if strip_words:
+        name = re.sub(r'\b(%s)\b' % '|'.join(UNIMPORTANT_WORDS), '', name)
+    return re.sub(r'[^a-zA-Z0-9]+', '_', name).strip('_')
 
 class MatchModel (models.Model):
     name = models.CharField(max_length=200)
+    slug = models.CharField(max_length=200, db_index=True, editable=False)
     match_name = models.CharField(max_length=200, db_index=True, editable=False)
 
     class Meta:
@@ -19,7 +26,8 @@ class MatchModel (models.Model):
         return self.name
 
     def save(self, **kwargs):
-        self.match_name = get_match_name(self.name)
+        self.slug = slugify(self.name)
+        self.match_name = slugify(self.name, strip_words=True)
         super(MatchModel, self).save(**kwargs)
 
 class Artist (MatchModel):

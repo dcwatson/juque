@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.files.base import File, ContentFile
-from juque.library.models import Track, Artist, Album, Genre, get_match_name
+from juque.library.models import Track, Artist, Album, Genre, slugify
 from juque.core.models import User
 from mutagen import id3, mp4, File as scan_file
 from Crypto.Cipher import AES
@@ -113,28 +113,25 @@ def create_track(file_path, owner, copy=None):
     track = 0
     if 'artist' in tags:
         artist_name = tags['artist']
-        artist_match = get_match_name(artist_name)
         try:
-            artist = Artist.objects.get(match_name=artist_match)
+            artist = Artist.objects.get(slug=slugify(artist_name))
         except:
-            artist = Artist.objects.create(name=artist_name, match_name=artist_match)
+            artist = Artist.objects.create(name=artist_name)
     if 'album' in tags:
         album_name = tags['album']
-        album_match = get_match_name(album_name)
         try:
             # Make sure we don't grab a "bare" album (without an artist), since they are essentially
             # one-offs for tracks not specifying an artist. Just because the names may match, doesn't mean
             # the tracks are off the same album unless the artist matches too.
-            album = Album.objects.get(artist=artist, artist__isnull=False, match_name=album_match)
+            album = Album.objects.get(artist=artist, artist__isnull=False, slug=slugify(album_name))
         except:
-            album = Album.objects.create(name=album_name, artist=artist, match_name=album_match)
+            album = Album.objects.create(name=album_name, artist=artist)
     if 'genre' in tags:
         genre_name = tags['genre']
-        genre_match = get_match_name(genre_name)
         try:
-            genre = Genre.objects.get(match_name=genre_match)
+            genre = Genre.objects.get(slug=slugify(genre_name))
         except:
-            genre = Genre.objects.create(name=genre_name, match_name=genre_match)
+            genre = Genre.objects.create(name=genre_name)
     if 'track' in tags and tags['track'].isdigit():
         track = int(tags['track'])
     if copy:

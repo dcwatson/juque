@@ -1,7 +1,7 @@
-Django==1.4.2
-boto==2.6.0
-django-storages==1.1.5
-mutagen==1.20
-pycrypto==2.6
-pytz==2012h
-#uWSGI==1.4.2
+Django<1.5
+boto
+django-storages
+mutagen
+pycrypto
+pytz
+django-tastypie
