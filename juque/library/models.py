@@ -41,9 +41,11 @@ class Genre (MatchModel):
 
 class Track (MatchModel):
     owner = models.ForeignKey(User, related_name='tracks')
+    # Audio information
     length = models.FloatField(editable=False)
     bitrate = models.IntegerField(editable=False)
     sample_rate = models.IntegerField(editable=False)
+    # Tagging
     artist = models.ForeignKey(Artist, related_name='tracks', null=True, blank=True)
     album = models.ForeignKey(Album, related_name='tracks', null=True, blank=True)
     genre = models.ForeignKey(Genre, related_name='tracks', null=True, blank=True)
@@ -58,6 +60,8 @@ class Track (MatchModel):
     # System information
     date_added = models.DateTimeField(default=timezone.now, editable=False)
     date_modified = models.DateTimeField(editable=False)
+    # Other stuff
+    play_count = models.IntegerField(default=0)
 
     def save(self, **kwargs):
         self.date_modified = timezone.now()

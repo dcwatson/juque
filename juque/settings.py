@@ -2,7 +2,7 @@ import os
 
 BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 
-DEBUG = False
+DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
 ADMINS = (
@@ -114,6 +114,7 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'juque.core',
     'juque.library',
+    'juque.playlists',
 )
 
 # A sample logging configuration. The only tangible logging

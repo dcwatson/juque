@@ -2,6 +2,7 @@ from django.conf import settings
 from django.conf.urls import patterns, include, url
 from django.contrib import admin
 from juque.library.api import TrackResource, ArtistResource, AlbumResource, GenreResource
+from juque.playlists.api import PlaylistResource, LivePlaylistResource
 from tastypie.api import Api
 
 admin.autodiscover()
@@ -19,6 +20,8 @@ api.register(ArtistResource())
 api.register(AlbumResource())
 api.register(GenreResource())
 api.register(TrackResource())
+api.register(PlaylistResource())
+api.register(LivePlaylistResource())
 
 urlpatterns += patterns('',
     url(r'^api/', include(api.urls)),
