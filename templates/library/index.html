@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load track %}
+
+{% block content %}
+<div class="row">
+
+<div class="span2">
+    <ul class="nav nav-list">
+        <li class="nav-header">Owner</li>
+    </ul>
+    <ul class="nav nav-list">
+        <li class="nav-header">Popular Genres</li>
+        {% for g in genres %}
+        <li><a href="{% url genre slug=g.slug %}">{{ g }} ({{ g.num_tracks }})</a></li>
+        {% endfor %}
+    </ul>
+</div>
+
+<div class="span10">
+
+<div class="well">
+    <audio id="player" controls></audio>
+</div>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Track</th>
+            <th>Artist</th>
+            <th>Album</th>
+            <th>Genre</th>
+            <th>Bitrate</th>
+            <th>Length</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for track in page %}
+        <tr>
+            <td class="nowrap">
+                <a class="play" data-track-url="{{ track.url }}" href="{% url play track_id=track.pk %}"><i class="icon-play-circle"></i></a>
+                <a class="" href="#"><i class="icon-download"></i></a>
+            </td>
+            <td>{{ track }}</td>
+            <td>{{ track.artist }}</td>
+            <td>{{ track.album }}</td>
+            <td>{{ track.genre }}</td>
+            <td>{{ track.bitrate|bitrate }}</td>
+            <td>{{ track.length|track_length }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<div class="dropdown pull-right">
+    <a class="btn dropdown-toggle" role="button" data-toggle="dropdown" href="#">
+        Library Cleanups
+        <b class="caret"></b>
+    </a>
+    <ul class="dropdown-menu" role="menu">
+        <li><a href="{% url cleanup-artists %}">Clean Up Artists</a></li>
+        <li><a href="{% url cleanup-albums %}">Clean Up Albums</a></li>
+        <li><a href="{% url cleanup-tracks %}">Clean Up Tracks</a></li>
+    </ul>
+</div>
+
+<div class="pagination">
+    <span class="label">{{ page.paginator.count }} tracks</span>
+    <ul>
+        {% if page.has_previous %}
+        <li><a href="?page={{ page.previous_page_number }}&amp;q={{ q }}">&laquo;</a></li>
+        {% else %}
+        <li class="disabled"><a href="">&laquo;</a></li>
+        {% endif %}
+        {% for p in page_range %}
+        <li{% if p == page.number %} class="disabled"{% endif %}><a href="?page={{ p }}&amp;q={{ q }}">{{ p }}</a></li>
+        {% endfor %}
+        {% if page.has_next %}
+        <li><a href="?page={{ page.next_page_number }}&amp;q={{ q }}">&raquo;</a></li>
+        {% else %}
+        <li class="disabled"><a href="">&raquo;</a></li>
+        {% endif %}
+    </ul>
+</div>
+
+</div>
+</div>
+{% endblock %}

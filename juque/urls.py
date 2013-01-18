@@ -7,11 +7,9 @@ from tastypie.api import Api
 
 admin.autodiscover()
 
-urlpatterns = patterns('juque.library.views',
-    url(r'^$', 'index', name='index'),
-    url(r'^play/(?P<track_id>\d+)/$', 'track_play', name='play'),
-    url(r'^playlist/(?P<track_id>\d+)/$', 'track_playlist', name='playlist'),
-    url(r'^key/(?P<track_id>\d+)/$', 'track_key', name='key'),
+urlpatterns = patterns('',
+    url(r'^library/', include('juque.library.urls')),
+    url(r'^player/', include('juque.player.urls')),
     url(r'^admin/', include(admin.site.urls)),
 )
 

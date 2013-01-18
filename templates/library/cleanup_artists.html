@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block content %}
+<form action="" method="post">
+{% for match_name, artists in artist_groups.items %}
+<h3>{{ match_name }}</h3>
+<blockquote><p>
+    <label class="radio">
+        <input type="radio" name="{{ match_name }}" value="" checked="checked" />
+        Do Nothing
+    </label>
+    {% for a in artists %}
+    <label class="radio">
+        <input type="radio" name="{{ match_name }}" value="{{ a.pk }}" />
+        Use "{{ a }}"
+        <span class="badge">{{ a.num_tracks }}</span>
+    </label>
+    {% endfor %}
+</p></blockquote>
+{% endfor %}
+<button type="submit" class="btn">Clean Up Artists</button>
+</form>
+{% endblock %}

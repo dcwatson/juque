@@ -7,15 +7,15 @@ class TrackAdmin (admin.ModelAdmin):
     readonly_fields = [f.name for f in Track._meta.fields if not f.editable]
 
 class ArtistAdmin (admin.ModelAdmin):
-    list_display = ('name', 'match_name')
+    list_display = ('name', 'match_name', 'slug')
     ordering = ('name',)
 
 class AlbumAdmin (admin.ModelAdmin):
-    list_display = ('name', 'match_name', 'artist')
+    list_display = ('name', 'match_name', 'slug', 'artist')
     ordering = ('name',)
 
 class GenreAdmin (admin.ModelAdmin):
-    list_display = ('name', 'match_name')
+    list_display = ('name', 'match_name', 'slug')
     ordering = ('name',)
 
 admin.site.register(Track, TrackAdmin)

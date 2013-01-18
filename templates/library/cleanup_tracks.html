@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load track %}
+
+{% block content %}
+<div class="alert"><span class="label label-warning">NOTE</span> You should clean up artists and albums before cleaning duplicates.</div>
+
+<form action="" method="post">
+{% for dupe in track_dupes %}
+<h3>{{ dupe.artist }} &mdash; {{ dupe.match_name }}</h3>
+<blockquote><p>
+    <label class="radio">
+        <input type="radio" name="{{ dupe.key }}" value="" checked="checked" />
+        Do Nothing
+    </label>
+    {% for t in dupe.tracks %}
+    <label class="radio">
+        <input type="radio" name="{{ dupe.key }}" value="{{ t.pk }}" />
+        Keep "{{ t }}"
+        {% if t.album %}off "{{ t.album }}"{% endif %}
+        <span class="label">{{ t.bitrate|bitrate }}</span>
+        <span class="label">{{ t.length|track_length }}</span>
+    </label>
+    {% endfor %}
+</p></blockquote>
+{% endfor %}
+<button type="submit" class="btn">Clean Up Tracks</button>
+</form>
+{% endblock %}

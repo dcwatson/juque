@@ -1,18 +1,19 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
+from django.template.defaultfilters import slugify as django_slugify
 from juque.core.models import User
 import os
 import re
 
 # TODO: This list should probably be shortened. I will need to tweak it after experimenting with a larger sample.
-UNIMPORTANT_WORDS = ('a', 'an', 'be', 'and', 'i', 'in', 'is', 'it', 'of', 'on', 'or', 'so', 'the', 'to')
+UNIMPORTANT_WORDS = ('a', 'an', 'be', 'and', 'in', 'is', 'it', 'of', 'on', 'or', 'so', 'the', 'to')
 
 def slugify(name, strip_words=False):
     name = name.lower()
     if strip_words:
         name = re.sub(r'\b(%s)\b' % '|'.join(UNIMPORTANT_WORDS), '', name)
-    return re.sub(r'[^a-zA-Z0-9]+', '_', name).strip('_')
+    return django_slugify(name)
 
 class MatchModel (models.Model):
     name = models.CharField(max_length=200)
@@ -53,7 +54,6 @@ class Track (MatchModel):
     # File information
     file_path = models.TextField(editable=False)
     file_size = models.IntegerField(editable=False)
-    file_hash = models.CharField(max_length=32, unique=True, editable=False)
     # Segment information (optional)
     segment_aes_key = models.CharField(max_length=32, editable=False, blank=True)
     segment_aes_iv = models.CharField(max_length=32, editable=False, blank=True)
@@ -66,6 +66,14 @@ class Track (MatchModel):
     def save(self, **kwargs):
         self.date_modified = timezone.now()
         super(Track, self).save(**kwargs)
+
+    def url(self):
+        return '/player/stream/%s/' % self.pk
+#        prefix = '/Users/dcwatson/Desktop/From Old iMac/dcwatson/Music/iTunes/iTunes Music'
+#        part = self.file_path[len(prefix):]
+#        return 'http://192.168.1.28:8080%s' % part
+#        storage = self.owner.get_storage()
+#        return storage.url(self.file_path)
 
 class Segment (models.Model):
     track = models.ForeignKey(Track, related_name='segments')

@@ -93,15 +93,11 @@ def segment_track(track):
 def create_track(file_path, owner, copy=None):
     if copy is None:
         copy = settings.JUQUE_COPY_SOURCE
-    with open(file_path, 'rb') as f:
-        data = f.read()
-        file_size = len(data)
-        file_hash = hashlib.md5(data).hexdigest()
-    try:
-        return Track.objects.get(file_hash=file_hash)
-    except:
-        pass
+    file_size = os.path.getsize(file_path)
     meta = scan_file(file_path)
+    if not meta or not meta.tags:
+        print 'NO TAGS FOUND:', file_path
+        return
     tags = map_tags(meta.tags)
     try:
         title = tags['title']
@@ -134,13 +130,7 @@ def create_track(file_path, owner, copy=None):
             genre = Genre.objects.create(name=genre_name)
     if 'track' in tags and tags['track'].isdigit():
         track = int(tags['track'])
-    if copy:
-        storage = owner.get_storage()
-        ext = file_path.split('.')[-1].lower()
-        new_path = 'tracks/%s/%s/%s.%s' % (file_hash[0], file_hash[1], file_hash, ext)
-        with open(file_path, 'rb') as f:
-            file_path = storage.save(new_path, File(f))
-    return Track.objects.create(
+    t = Track.objects.create(
         owner=owner,
         name=title,
         length=meta.info.length,
@@ -152,8 +142,15 @@ def create_track(file_path, owner, copy=None):
         track_number=track,
         file_path=file_path,
         file_size=file_size,
-        file_hash=file_hash,
     )
+    if copy:
+        storage = owner.get_storage()
+        ext = file_path.split('.')[-1].lower()
+        new_path = 'tracks/%s/source.%s' % (t.pk, ext)
+        with open(file_path, 'rb') as f:
+            t.file_path = storage.save(new_path, File(f))
+        t.save()
+    return t
 
 def scan_directory(dir_path, owner=None):
     if owner is None:
@@ -164,5 +161,5 @@ def scan_directory(dir_path, owner=None):
             if ext[1:].lower() in settings.JUQUE_SCAN_EXTENSIONS:
                 file_path = os.path.abspath(os.path.join(root, name))
                 track = create_track(file_path, owner)
-                if settings.JUQUE_SEGMENT:
+                if track and settings.JUQUE_SEGMENT:
                     segment_track(track)

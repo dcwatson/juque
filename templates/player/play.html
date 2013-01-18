@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>{{ track }}</h1>
+    <audio src="{{ track.url }}" style="width:100%;" controls autoplay></audio>
+    <!--
+    <audio src="{% url stream track_id=track.pk %}" style="width:100%;" controls autoplay></audio>
+    -->
+{% endblock %}

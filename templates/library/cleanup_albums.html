@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="alert"><span class="label label-warning">NOTE</span> You should clean up artists before cleaning up albums.</div>
+
+<form action="" method="post">
+{% for dupe in album_dupes %}
+<h3>{{ dupe.artist }} &mdash; {{ dupe.match_name }}</h3>
+<blockquote><p>
+    <label class="radio">
+        <input type="radio" name="{{ dupe.key }}" value="" checked="checked" />
+        Do Nothing
+    </label>
+    {% for a in dupe.albums %}
+    <label class="radio">
+        <input type="radio" name="{{ dupe.key }}" value="{{ a.pk }}" />
+        Use "{{ a }}"
+        <span class="badge">{{ a.num_tracks }}</span>
+    </label>
+    {% endfor %}
+</p></blockquote>
+{% endfor %}
+<button type="submit" class="btn">Clean Up Albums</button>
+</form>
+{% endblock %}
