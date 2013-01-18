@@ -51,9 +51,12 @@ class Track (MatchModel):
     album = models.ForeignKey(Album, related_name='tracks', null=True, blank=True)
     genre = models.ForeignKey(Genre, related_name='tracks', null=True, blank=True)
     track_number = models.IntegerField(default=0)
+    track_date = models.CharField(max_length=50, blank=True)
     # File information
     file_path = models.TextField(editable=False)
     file_size = models.IntegerField(editable=False)
+    # Cover Art
+    cover_path = models.TextField(editable=False)
     # Segment information (optional)
     segment_aes_key = models.CharField(max_length=32, editable=False, blank=True)
     segment_aes_iv = models.CharField(max_length=32, editable=False, blank=True)
@@ -67,13 +70,18 @@ class Track (MatchModel):
         self.date_modified = timezone.now()
         super(Track, self).save(**kwargs)
 
+    def cover_url(self):
+        if not self.cover_path:
+            return '%simg/cover-default.jpg' % settings.STATIC_URL
+        storage = self.owner.get_storage()
+        return storage.url(self.cover_path)
+
     def url(self):
-        return '/player/stream/%s/' % self.pk
-#        prefix = '/Users/dcwatson/Desktop/From Old iMac/dcwatson/Music/iTunes/iTunes Music'
-#        part = self.file_path[len(prefix):]
-#        return 'http://192.168.1.28:8080%s' % part
-#        storage = self.owner.get_storage()
-#        return storage.url(self.file_path)
+        if settings.DEBUG:
+            return '/player/stream/%s/' % self.pk
+        else:
+            storage = self.owner.get_storage()
+            return storage.url(self.file_path)
 
 class Segment (models.Model):
     track = models.ForeignKey(Track, related_name='segments')

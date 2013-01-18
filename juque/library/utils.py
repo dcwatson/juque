@@ -5,6 +5,7 @@ from juque.core.models import User
 from mutagen import id3, mp4, File as scan_file
 from Crypto.Cipher import AES
 import subprocess
+import mimetypes
 import binascii
 import datetime
 import tempfile
@@ -30,7 +31,7 @@ TAG_MAPPERS = {
         '\xa9ART': 'artist',
         '\xa9nam': 'title',
         '\xa9alb': 'album',
-        'aART':    'albumartist',
+        'aART': 'albumartist',
         '\xa9grp': 'grouping',
         '\xa9day': 'date',
         '\xa9gen': 'genre',
@@ -48,6 +49,21 @@ def map_tags(tags):
         if key in mapper:
             mapped_tags[mapper[key]] = unicode(value).strip().replace('\x00', '')
     return mapped_tags
+
+def extract_artwork(tags):
+    if isinstance(tags, mp4.MP4Tags):
+        cover = tags['covr'][0]
+        if cover.imageformat == mp4.MP4Cover.FORMAT_JPEG:
+            return 'image/jpeg', cover
+        elif cover.imageformat == mp4.MP4Cover.FORMAT_PNG:
+            return 'image/png', cover
+        raise ValueError('Unknown image format.')
+    elif isinstance(tags, id3.ID3):
+        cover = tags['APIC:']
+        if cover.type == 3:
+            return cover.mime, cover.data
+        raise ValueError('Artwork was no front cover art.')
+    raise ValueError('No artwork found.')
 
 def aes_pad(text, block_size, zero=False):
     num = block_size - (len(text) % block_size)
@@ -128,8 +144,14 @@ def create_track(file_path, owner, copy=None):
             genre = Genre.objects.get(slug=slugify(genre_name))
         except:
             genre = Genre.objects.create(name=genre_name)
-    if 'track' in tags and tags['track'].isdigit():
-        track = int(tags['track'])
+    if 'track' in tags:
+        if tags['track'].isdigit():
+            track = int(tags['track'])
+        elif '/' in tags['track']:
+            try:
+                track = int(tags['track'].split('/')[0])
+            except:
+                pass
     t = Track.objects.create(
         owner=owner,
         name=title,
@@ -140,16 +162,27 @@ def create_track(file_path, owner, copy=None):
         album=album,
         genre=genre,
         track_number=track,
+        track_date=tags.get('date', '').strip(),
         file_path=file_path,
         file_size=file_size,
     )
+    storage = owner.get_storage()
     if copy:
-        storage = owner.get_storage()
         ext = file_path.split('.')[-1].lower()
         new_path = 'tracks/%s/source.%s' % (t.pk, ext)
         with open(file_path, 'rb') as f:
             t.file_path = storage.save(new_path, File(f))
-        t.save()
+    try:
+        mime, data = extract_artwork(meta.tags)
+        ext = mimetypes.guess_extension(mime)
+        # What a ridiculous default extension for image/jpeg.
+        if ext == '.jpe':
+            ext = '.jpg'
+        path = 'artwork/%s/cover%s' % (t.pk, ext)
+        t.cover_path = storage.save(path, ContentFile(data))
+    except:
+        pass
+    t.save()
     return t
 
 def scan_directory(dir_path, owner=None):

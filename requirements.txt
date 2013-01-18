@@ -1,7 +1,7 @@
-Django<1.5
 boto
+Django>=1.5
 django-storages
+django-tastypie>0.9.11
 mutagen
 pycrypto
 pytz
-django-tastypie

@@ -5,16 +5,19 @@ from django.contrib.sites.models import Site
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, Count
 from django.db import connections
+from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
 from bootstrap.utils import local_page_range
 import collections
 import binascii
 
-def index(request, genre=None):
+def index(request, genre=None, owner=None):
     q = request.GET.get('q', '').strip()
     qs = Track.objects.select_related('artist', 'album').order_by('artist__name', 'album__name', 'name')
     if genre:
         qs = qs.filter(genre=genre)
+    if owner:
+        qs = qs.filter(owner=owner)
     if q:
         q_obj = Q(name__icontains=q) | Q(artist__name__icontains=q) | Q(album__name__icontains=q)
         qs = qs.filter(q_obj)
@@ -25,17 +28,21 @@ def index(request, genre=None):
         page = paginator.page(1)
     except EmptyPage:
         page = paginator.page(paginator.num_pages)
-    genres = Genre.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks')[:10]
     return render(request, 'library/index.html', {
         'page': page,
         'page_range': local_page_range(page, 15),
         'q': q,
-        'genres': genres,
+        'genres': Genre.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks')[:10],
+        'users': User.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks'),
     })
 
 def genre(request, slug):
     genre = get_object_or_404(Genre, slug=slug)
     return index(request, genre=genre)
+
+def user(request, uid):
+    owner = get_object_or_404(User, pk=uid)
+    return index(request, owner=owner)
 
 def cleanup_artists(request):
     if request.method == 'POST':

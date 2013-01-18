@@ -2,7 +2,7 @@ from django.contrib import admin
 from juque.library.models import Track, Artist, Album, Genre
 
 class TrackAdmin (admin.ModelAdmin):
-    list_display = ('name', 'artist', 'album', 'genre', 'length', 'bitrate', 'sample_rate')
+    list_display = ('name', 'artist', 'album', 'genre', 'length', 'track_number', 'track_date', 'bitrate', 'sample_rate')
     ordering = ('artist', 'name')
     readonly_fields = [f.name for f in Track._meta.fields if not f.editable]
 

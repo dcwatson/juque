@@ -7,18 +7,24 @@
 <div class="span2">
     <ul class="nav nav-list">
         <li class="nav-header">Owner</li>
+        {% for u in users %}
+        <li><a href="{% url "library-user" uid=u.pk %}">{{ u }} ({{ u.num_tracks }})</a></li>
+        {% endfor %}
     </ul>
-    <ul class="nav nav-list">
+    <ul class="nav nav-list" style="margin-top:20px;">
         <li class="nav-header">Popular Genres</li>
         {% for g in genres %}
-        <li><a href="{% url genre slug=g.slug %}">{{ g }} ({{ g.num_tracks }})</a></li>
+        <li><a href="{% url "library-genre" slug=g.slug %}">{{ g }} ({{ g.num_tracks }})</a></li>
         {% endfor %}
     </ul>
 </div>
 
 <div class="span10">
 
-<div class="well">
+<div class="player">
+    <img src="{{ STATIC_URL }}img/cover-default.jpg" alt="" width="100" height="100" class="pull-left" />
+    <div class="track">Now Playing</div>
+    <div class="artist">None</div>
     <audio id="player" controls></audio>
 </div>
 
@@ -38,7 +44,7 @@
         {% for track in page %}
         <tr>
             <td class="nowrap">
-                <a class="play" data-track-url="{{ track.url }}" href="{% url play track_id=track.pk %}"><i class="icon-play-circle"></i></a>
+                <a class="play" data-track-url="{{ track.url }}" data-artist="{{ track.artist }}" data-title="{{ track }}" data-cover-url="{{ track.cover_url }}" href="{% url "play" track_id=track.pk %}"><i class="icon-play-circle"></i></a>
                 <a class="" href="#"><i class="icon-download"></i></a>
             </td>
             <td>{{ track }}</td>
@@ -58,14 +64,13 @@
         <b class="caret"></b>
     </a>
     <ul class="dropdown-menu" role="menu">
-        <li><a href="{% url cleanup-artists %}">Clean Up Artists</a></li>
-        <li><a href="{% url cleanup-albums %}">Clean Up Albums</a></li>
-        <li><a href="{% url cleanup-tracks %}">Clean Up Tracks</a></li>
+        <li><a href="{% url "cleanup-artists" %}">Clean Up Artists</a></li>
+        <li><a href="{% url "cleanup-albums" %}">Clean Up Albums</a></li>
+        <li><a href="{% url "cleanup-tracks" %}">Clean Up Tracks</a></li>
     </ul>
 </div>
 
 <div class="pagination">
-    <span class="label">{{ page.paginator.count }} tracks</span>
     <ul>
         {% if page.has_previous %}
         <li><a href="?page={{ page.previous_page_number }}&amp;q={{ q }}">&laquo;</a></li>
