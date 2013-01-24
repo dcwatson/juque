@@ -99,7 +99,7 @@ LOGGING = {
     },
     'formatters': {
         'verbose': {
-            'format': '%(name)s %(levelname)s %(asctime)s %(module)s [pid: %(process)d] %(message)s',
+            'format': '%(name)s:%(lineno)d %(levelname)s %(asctime)s [pid: %(process)d] %(message)s',
         },
         'simple': {
             'format': '%(levelname)s %(message)s',
@@ -123,7 +123,7 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
-        '': {
+        'juque': {
             'level': 'DEBUG',
             'handlers': ['console'],
         }

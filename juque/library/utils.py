@@ -16,6 +16,8 @@ import shutil
 import csv
 import os
 
+logger = logging.getLogger(__name__)
+
 TAG_MAPPERS = {
     id3.ID3: {
         'TPE1': 'artist',
@@ -138,7 +140,7 @@ def create_track(file_path, owner, copy=None):
     file_size = os.path.getsize(file_path)
     meta = scan_file(file_path)
     if not meta or not meta.tags:
-        logging.warning('No tags found in %s; Skipping.', file_path)
+        logger.warning('No tags found in %s; Skipping.', file_path)
         return
     tags = map_tags(meta.tags)
     try:
@@ -210,3 +212,4 @@ def scan_directory(dir_path, owner=None):
             if ext[1:].lower() in settings.JUQUE_SCAN_EXTENSIONS:
                 file_path = os.path.abspath(os.path.join(root, name))
                 track = create_track(file_path, owner)
+                logger.info('Added track: %s', track)

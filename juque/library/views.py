@@ -7,6 +7,7 @@ from django.db.models import Q, Count
 from django.db import connections
 from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
+from juque.library.forms import TrackForm
 from bootstrap.utils import local_page_range
 import collections
 import binascii
@@ -34,6 +35,13 @@ def index(request, genre=None, owner=None):
         'q': q,
         'genres': Genre.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks')[:10],
         'users': User.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks'),
+    })
+
+def track_edit(request, track_id):
+    track = get_object_or_404(Track.objects.select_related('artist', 'album', 'genre'), pk=track_id)
+    return render(request, 'library/track_edit.html', {
+        'track': track,
+        'form': TrackForm(instance=track),
     })
 
 def genre(request, slug):

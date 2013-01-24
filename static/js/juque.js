@@ -11,4 +11,6 @@ $(function() {
         player.play();
         return false;
     });
+
+    $('select').chosen();
 });

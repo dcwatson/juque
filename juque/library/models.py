@@ -73,13 +73,13 @@ class Track (MatchModel):
     # File information
     file_path = models.TextField(editable=False)
     file_size = models.IntegerField(editable=False)
-    file_managed = models.BooleanField()
-    file_type = models.CharField(max_length=100, choices=FILE_TYPE_CHOICES)
+    file_managed = models.BooleanField(editable=False)
+    file_type = models.CharField(max_length=100, choices=FILE_TYPE_CHOICES, editable=False)
     # System information
     date_added = models.DateTimeField(default=timezone.now, editable=False)
     date_modified = models.DateTimeField(editable=False)
     # Other stuff
-    play_count = models.IntegerField(default=0)
+    play_count = models.IntegerField(default=0, editable=False)
 
     def save(self, **kwargs):
         self.date_modified = timezone.now()
