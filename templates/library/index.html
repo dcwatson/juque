@@ -44,10 +44,10 @@
         {% for track in page %}
         <tr>
             <td class="nowrap">
-                <a class="play" data-track-url="{{ track.url }}" data-artist="{{ track.artist }}" data-title="{{ track }}" data-cover-url="{{ track.cover_url }}" href="{% url "play" track_id=track.pk %}"><i class="icon-play-circle"></i></a>
+                <a class="play" data-track-url="{{ track.url }}" data-artist="{{ track.artist }}" data-title="{{ track }}" data-cover-url="{{ track.album.artwork_url }}" href="{% url "play" track_id=track.pk %}"><i class="icon-play-circle"></i></a>
                 <a class="" href="#"><i class="icon-download"></i></a>
             </td>
-            <td>{{ track }}</td>
+            <td><a href="{% url "play" track_id=track.pk %}">{{ track }}</a></td>
             <td>{{ track.artist }}</td>
             <td>{{ track.album }}</td>
             <td>{{ track.genre }}</td>

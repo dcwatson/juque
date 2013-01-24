@@ -18,6 +18,13 @@ DATABASES = {
     }
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+        'LOCATION': os.path.join(BASE_DIR, 'cache'),
+    }
+}
+
 TIME_ZONE = 'America/New_York'
 LANGUAGE_CODE = 'en-us'
 
@@ -67,7 +74,6 @@ TEMPLATE_DIRS = (
 )
 
 INSTALLED_APPS = (
-#    'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.sites',
@@ -79,21 +85,36 @@ INSTALLED_APPS = (
     'juque.player',
     'juque.playlists',
     'bootstrap',
+    'compressor',
+    'south',
 )
 
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
+    'disable_existing_loggers': True,
     'filters': {
         'require_debug_false': {
             '()': 'django.utils.log.RequireDebugFalse'
         }
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(name)s %(levelname)s %(asctime)s %(module)s [pid: %(process)d] %(message)s',
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s',
+        },
     },
     'handlers': {
         'mail_admins': {
             'level': 'ERROR',
             'filters': ['require_debug_false'],
             'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
         }
     },
     'loggers': {
@@ -102,15 +123,25 @@ LOGGING = {
             'level': 'ERROR',
             'propagate': True,
         },
+        '': {
+            'level': 'DEBUG',
+            'handlers': ['console'],
+        }
     }
 }
 
-JUQUE_SCAN_EXTENSIONS = ('mp3', 'm4a')
+JUQUE_SCAN_EXTENSIONS = ('mp3', 'm4a', 'mp4')
+JUQUE_COPY_SOURCE = True
+JUQUE_FFMPEG_BINARY = '/usr/bin/ffmpeg'
 
-JUQUE_COPY_SOURCE = False
+LASTFM_ENABLE = False
+LASTFM_ENDPOINT = 'http://ws.audioscrobbler.com/2.0/'
+LASTFM_API_KEY = ''
+LASTFM_CACHE_TIME = 60 * 60 * 24 * 14 # 2 week cache
+LASTFM_CALLS_PER_SECOND = 2
 
-JUQUE_SEGMENT = False
-JUQUE_SEGMENT_CODEC = 'mp3'
-JUQUE_SEGMENT_BITRATE = '96k'
-JUQUE_SEGMENT_SIZE = 10
-JUQUE_FFMPEG_BINARY = '/Users/dcwatson/Downloads/ffmpeg'
+try:
+    _this_dir = os.path.abspath(os.path.dirname(__file__))
+    execfile(os.path.join(_this_dir, 'local_settings.py'))
+except:
+    print '*** No local settings file found -- using defaults!'

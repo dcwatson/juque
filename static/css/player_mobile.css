@@ -1,0 +1,48 @@
+@media only screen and (min-width: 320px) and (max-width: 480px) {
+    body { background-color: black; padding: 0px; margin: 0px; }
+    div.navbar { display: none; }
+    div.buttons {
+        position: fixed;
+        border-top: 1px solid #222;
+        background: -webkit-linear-gradient(#111, #222);
+        left: 0px;
+        right: 0px;
+        bottom: 0px;
+        height: 60px;
+    }
+    div.buttons a {
+        float: left;
+        display: block;
+        height: 60px;
+        line-height: 60px;
+        width: 105px;
+        text-align: center;
+        text-decoration: none;
+        color: white;
+        font-size: 28px;
+        border-right: 1px solid #333;
+        border-left: 1px solid #000;
+    }
+    div.buttons a:last-child { border-right: none; }
+    div.info {
+        position: fixed;
+        left: 0px;
+        right: 0px;
+        bottom: 61px;
+        border-top: 1px solid black;
+        background-color: rgba(0, 0, 0, 0.5);
+        padding: 10px 20px;
+    }
+    div.info a.backlink {
+        float: left;
+        display: block;
+        font-size: 28px;
+        margin-top: 10px;
+        color: white;
+        margin-right: 20px;
+    }
+    img { width: 100%; }
+    p { margin: 0px 0px 5px 0px; color: #eee; }
+    p.track { font-size: 120%; font-weight: bold; }
+    audio { visibility: hidden; }
+}

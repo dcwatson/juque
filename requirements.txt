@@ -1,7 +1,10 @@
 boto
 Django>=1.5
+django-compressor
 django-storages
 django-tastypie>0.9.11
 mutagen
 pycrypto
 pytz
+requests
+South

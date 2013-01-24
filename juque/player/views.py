@@ -2,8 +2,6 @@ from django.shortcuts import get_object_or_404, render
 from django.conf import settings
 from django.http import HttpResponse
 from juque.library.models import Track
-from juque.library.utils import aes_pad
-from Crypto.Cipher import AES
 import subprocess
 import mimetypes
 import binascii
@@ -38,53 +36,46 @@ def track_stream(request, track_id):
         resp['Content-Range'] = hdr
     return resp
 
-class Transcoder (object):
-    def __init__(self, track, codec, bitrate='128k', buffer_size=8192):
+class RecordingTranscoder (object):
+    def __init__(self, track, codec, bitrate='64k', buffer_size=8192):
         args = [
             settings.JUQUE_FFMPEG_BINARY,
             '-v', 'quiet',
             '-i', track.file_path,
             '-acodec', codec,
             '-ab', bitrate,
-            '-f', 'mpegts',
+            '-f', codec,
             '-',
         ]
+        self.output_file = open('/Users/dcwatson/Desktop/transcode_output.mp3', 'wb')
         self.buffer_size = buffer_size
         self.process = subprocess.Popen(args, stdout=subprocess.PIPE)
     def close(self):
+        print 'CLOSED'
         if self.process.returncode is not None:
+            print self.process.returncode
             return
         self.process.stdout.close()
-        try:
-            self.process.terminate()
-        except:
-            pass
+        self.process.terminate()
         self.process.wait()
+        self.output_file.close()
     def __iter__(self):
-        while True:
-            try:
+        try:
+            while True:
                 data = self.process.stdout.read(self.buffer_size)
                 if not data:
+                    print 'FINISHED?'
                     break
-                yield '%s\r\n%s\r\n' % (hex(len(data))[2:], data)
-            except GeneratorExit:
-                print 'GENERATOR EXIT'
-                break
-            except:
-                break
+                self.output_file.write(data)
+                self.output_file.flush()
+                yield data
+        except GeneratorExit:
+            print 'GENERATOR EXIT'
         self.close()
-        yield '0\r\n'
     def __del__(self):
         self.close()
 
 def track_transcode(request, track_id, codec):
-    try:
-        from wsgiref import util
-        util._hoppish = {}.__contains__
-    except:
-        pass
     track = get_object_or_404(Track, pk=track_id)
     ct, encoding = mimetypes.guess_type('filename.%s' % codec)
-    resp = HttpResponse(ChunkedTranscoder(track, codec), content_type=ct)
-    resp['Transfer-Encoding'] = 'chunked'
-    return resp
+    return HttpResponse(RecordingTranscoder(track, codec), content_type=ct)

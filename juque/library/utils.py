@@ -1,7 +1,8 @@
 from django.conf import settings
 from django.core.files.base import File, ContentFile
-from juque.library.models import Track, Artist, Album, Genre, slugify
+from juque.library.models import Track, Artist, Album, Genre, slugify, library_storage
 from juque.core.models import User
+from juque.lastfm import get_album_info, get_album_artwork, get_track_info
 from mutagen import id3, mp4, File as scan_file
 from Crypto.Cipher import AES
 import subprocess
@@ -9,6 +10,7 @@ import mimetypes
 import binascii
 import datetime
 import tempfile
+import logging
 import hashlib
 import shutil
 import csv
@@ -65,46 +67,70 @@ def extract_artwork(tags):
         raise ValueError('Artwork was no front cover art.')
     raise ValueError('No artwork found.')
 
-def aes_pad(text, block_size, zero=False):
-    num = block_size - (len(text) % block_size)
-    ch = '\0' if zero else chr(num)
-    return text + (ch * num)
+def retag_track(track):
+    tags = scan_file(track.file_path).tags
+    mapper = TAG_MAPPERS[tags.__class__]
+    tags.clear()
+    for tag, name in mapper.items():
+        if name == 'artist':
+            tags[tag] = track.artist.name
+        elif name == 'title':
+            tags[tag] = track.name
+        elif name == 'album':
+            tags[tag] = track.album.name
+        elif name == 'genre':
+            tags[tag] = track.genre.name
+    tags.save(track.file_path)
 
-def segment_track(track):
-    storage = track.owner.get_storage()
-    temp_dir = tempfile.mkdtemp(suffix='.juque')
-    args = [
-        settings.JUQUE_FFMPEG_BINARY,
-        '-i', storage.path(track.file_path),
-        '-acodec', settings.JUQUE_SEGMENT_CODEC,
-        '-ab', settings.JUQUE_SEGMENT_BITRATE,
-        '-map', '0:0',
-        '-f', 'segment',
-        '-segment_list', 'segments.csv',
-        '-segment_time', str(settings.JUQUE_SEGMENT_SIZE),
-        '-segment_format', 'mpegts',
-        '-v', 'quiet',
-        '%04d.ts',
-    ]
-    subprocess.call(args, cwd=temp_dir)
-    # Generate a random key and IV to encrypt the segments.
-    key = os.urandom(16)
-    iv = os.urandom(16)
-    # Store the key and IV encoded as hex.
-    track.segment_aes_key = binascii.hexlify(key)
-    track.segment_aes_iv = binascii.hexlify(iv)
-    # Encrypt each segment, and save it using the appropriate storage.
-    cipher = AES.new(key, AES.MODE_CBC, iv)
-    seg_file = os.path.join(temp_dir, 'segments.csv')
-    with open(seg_file, 'rb') as sf:
-        for row in csv.reader(sf):
-            seg_path = 'segments/%s/%s/%s/%s' % (track.file_hash[0], track.file_hash[1], track.file_hash, row[0])
-            with open(os.path.join(temp_dir, row[0]), 'rb') as f:
-                data = cipher.encrypt(aes_pad(f.read(), cipher.block_size))
-                seg_path = storage.save(seg_path, ContentFile(data))
-                track.segments.create(start_time=float(row[1]), end_time=float(row[2]), file_path=seg_path)
+def update_album(album, update_artist=True, update_tracks=True, update_artwork=True):
+    info = get_album_info(album.artist.name, album.name)
+    if update_artist:
+        album.artist.name = info['artist'].strip()
+        album.artist.musicbrainz_id = info['tracks']['track'][0]['artist']['mbid']
+        album.artist.save()
+    if update_tracks:
+        for t in info['tracks']['track']:
+            match = slugify(t['name'], strip_words=True)
+            try:
+                track = album.tracks.get(match_name=match)
+                track.name = t['name'].strip()
+                track.track_number = int(t['@attr']['rank'])
+                track.musicbrainz_id = t['mbid'].strip()
+                track.save()
+            except Track.DoesNotExist:
+                pass
+    album.name = info['name'].strip()
+    album.musicbrainz_id = info['mbid'].strip()
+    album.num_tracks = len(info['tracks']['track'])
+    try:
+        s = info['releasedate'].strip().split(',')[0]
+        album.release_date = datetime.datetime.strptime(s, '%d %b %Y').date()
+    except:
+        pass
+    if update_artwork:
+        try:
+            mime, data = get_album_artwork(album)
+            ext = mimetypes.guess_extension(mime)
+            # What a ridiculous default extension for image/jpeg.
+            if ext == '.jpe':
+                ext = '.jpg'
+            path = 'album-art/%s%s' % (album.pk, ext)
+            if library_storage.exists(path):
+                library_storage.delete(path)
+            album.artwork_path = library_storage.save(path, ContentFile(data))
+        except:
+            pass
+    album.save()
+
+def update_track(track, update_artist=True):
+    info = get_track_info(track.artist.name, track.name)
+    if update_artist:
+        track.artist.name = info['artist']['name'].strip()
+        track.artist.musicbrainz_id = info['artist']['mbid'].strip()
+        track.artist.save()
+    track.name = info['name'].strip()
+    track.musicbrainz_id = info['mbid'].strip()
     track.save()
-    shutil.rmtree(temp_dir)
 
 def create_track(file_path, owner, copy=None):
     if copy is None:
@@ -112,7 +138,7 @@ def create_track(file_path, owner, copy=None):
     file_size = os.path.getsize(file_path)
     meta = scan_file(file_path)
     if not meta or not meta.tags:
-        print 'NO TAGS FOUND:', file_path
+        logging.warning('No tags found in %s; Skipping.', file_path)
         return
     tags = map_tags(meta.tags)
     try:
@@ -162,27 +188,17 @@ def create_track(file_path, owner, copy=None):
         album=album,
         genre=genre,
         track_number=track,
-        track_date=tags.get('date', '').strip(),
         file_path=file_path,
         file_size=file_size,
+        file_managed=copy,
+        file_type=meta.mime[0],
     )
-    storage = owner.get_storage()
     if copy:
-        ext = file_path.split('.')[-1].lower()
-        new_path = 'tracks/%s/source.%s' % (t.pk, ext)
+        ext = mimetypes.guess_extension(t.file_type)
+        new_path = 'tracks/%s%s' % (t.pk, ext)
         with open(file_path, 'rb') as f:
-            t.file_path = storage.save(new_path, File(f))
-    try:
-        mime, data = extract_artwork(meta.tags)
-        ext = mimetypes.guess_extension(mime)
-        # What a ridiculous default extension for image/jpeg.
-        if ext == '.jpe':
-            ext = '.jpg'
-        path = 'artwork/%s/cover%s' % (t.pk, ext)
-        t.cover_path = storage.save(path, ContentFile(data))
-    except:
-        pass
-    t.save()
+            t.file_path = library_storage.save(new_path, File(f))
+        t.save()
     return t
 
 def scan_directory(dir_path, owner=None):
@@ -194,5 +210,3 @@ def scan_directory(dir_path, owner=None):
             if ext[1:].lower() in settings.JUQUE_SCAN_EXTENSIONS:
                 file_path = os.path.abspath(os.path.join(root, name))
                 track = create_track(file_path, owner)
-                if track and settings.JUQUE_SEGMENT:
-                    segment_track(track)

@@ -21,4 +21,3 @@ class TrackResource (ModelResource):
 
     class Meta:
         queryset = Track.objects.all()
-        excludes = ('segment_aes_key', 'segment_aes_iv')

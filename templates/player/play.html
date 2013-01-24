@@ -1,9 +1,24 @@
 {% extends "base.html" %}
 
+{% block css %}
+    <link rel="stylesheet" href="{{ STATIC_URL }}css/player_mobile.css" />
+{% endblock %}
+
+{% block js %}
+    <script src="{{ STATIC_URL }}js/player.js"></script>
+{% endblock %}
+
 {% block content %}
-    <h1>{{ track }}</h1>
-    <audio src="{{ track.url }}" style="width:100%;" controls autoplay></audio>
-    <!--
-    <audio src="{% url stream track_id=track.pk %}" style="width:100%;" controls autoplay></audio>
-    -->
+    <img src="{{ track.cover_url }}" alt="" />
+    <div class="info">
+        <a href="{% url "library" %}" class="backlink"><i class="icon-chevron-left"></i></a>
+        <p class="track">{{ track }}{% if track.track_date %}{{ track.track_date }}{% endif %}</p>
+        <p class="artist">{{ track.artist }} &mdash; {{ track.album }}</p>
+    </div>
+    <div class="buttons"><!--
+        --><a href="#prev" id="prevTrack"><i class="icon-step-backward"></i></a><!--
+        --><a href="#play" id="play"><i class="icon-play"></i></a><!--
+        --><a href="#next" id="nextTrack"><i class="icon-step-forward"></i></a><!--
+    --></div>
+    <audio id="player" src="{{ track.url }}" controls></audio>
 {% endblock %}
