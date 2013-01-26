@@ -1,22 +1,21 @@
 from django.conf import settings
 from django.core.files.base import File, ContentFile
-from juque.library.models import Track, Artist, Album, Genre, slugify, library_storage
+from django.core.files.storage import FileSystemStorage
+from django.utils.text import slugify as django_slugify
 from juque.core.models import User
 from juque.lastfm import get_album_info, get_album_artwork, get_track_info
 from mutagen import id3, mp4, File as scan_file
-from Crypto.Cipher import AES
-import subprocess
 import mimetypes
-import binascii
 import datetime
-import tempfile
 import logging
-import hashlib
-import shutil
-import csv
 import os
 
 logger = logging.getLogger(__name__)
+
+library_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+
+# TODO: This list should probably be shortened. I will need to tweak it after experimenting with a larger sample.
+UNIMPORTANT_WORDS = ('a', 'an', 'be', 'and', 'in', 'is', 'it', 'of', 'on', 'or', 'so', 'the', 'to')
 
 TAG_MAPPERS = {
     id3.ID3: {
@@ -43,6 +42,14 @@ TAG_MAPPERS = {
         'trkn': 'track',
     }
 }
+
+def slugify(name, strip_words=False, strip_parens=True):
+    name = name.lower()
+    if strip_parens:
+        name = re.sub(r'\([^\)]*\)', '', name)
+    if strip_words:
+        name = re.sub(r'\b(%s)\b' % '|'.join(UNIMPORTANT_WORDS), '', name)
+    return django_slugify(name)
 
 def map_tags(tags):
     mapper = TAG_MAPPERS[tags.__class__]
@@ -135,6 +142,7 @@ def update_track(track, update_artist=True):
     track.save()
 
 def create_track(file_path, owner, copy=None):
+    from juque.library.models import Track, Artist, Album, Genre, library_storage
     if copy is None:
         copy = settings.JUQUE_COPY_SOURCE
     file_size = os.path.getsize(file_path)
@@ -213,3 +221,33 @@ def scan_directory(dir_path, owner=None):
                 file_path = os.path.abspath(os.path.join(root, name))
                 track = create_track(file_path, owner)
                 logger.info('Added track: %s', track)
+
+class RangeFileWrapper (object):
+    def __init__(self, filelike, blksize=8192, offset=0, length=None):
+        self.filelike = filelike
+        self.filelike.seek(offset, os.SEEK_SET)
+        self.remaining = length
+        self.blksize = blksize
+
+    def close(self):
+        if hasattr(self.filelike, 'close'):
+            self.filelike.close()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        if self.remaining is None:
+            # If remaining is None, we're reading the entire file.
+            data = self.filelike.read(self.blksize)
+            if data:
+                return data
+            raise StopIteration()
+        else:
+            if self.remaining <= 0:
+                raise StopIteration()
+            data = self.filelike.read(min(self.remaining, self.blksize))
+            if not data:
+                raise StopIteration()
+            self.remaining -= len(data)
+            return data

@@ -1,29 +1,16 @@
 from django.db import models
 from django.utils import timezone
 from django.conf import settings
-from django.core.files.storage import FileSystemStorage
-from django.utils.text import slugify as django_slugify
+from django.core.urlresolvers import reverse
 from juque.core.models import User
+from juque.library.utils import slugify, library_storage
 import os
 import re
-
-library_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
-
-# TODO: This list should probably be shortened. I will need to tweak it after experimenting with a larger sample.
-UNIMPORTANT_WORDS = ('a', 'an', 'be', 'and', 'in', 'is', 'it', 'of', 'on', 'or', 'so', 'the', 'to')
 
 FILE_TYPE_CHOICES = (
     ('audio/mp3', 'MP3'),
     ('audio/mp4', 'AAC'),
 )
-
-def slugify(name, strip_words=False, strip_parens=True):
-    name = name.lower()
-    if strip_parens:
-        name = re.sub(r'\([^\)]*\)', '', name)
-    if strip_words:
-        name = re.sub(r'\b(%s)\b' % '|'.join(UNIMPORTANT_WORDS), '', name)
-    return django_slugify(name)
 
 class MatchModel (models.Model):
     name = models.CharField(max_length=200)
@@ -86,4 +73,9 @@ class Track (MatchModel):
         super(Track, self).save(**kwargs)
 
     def url(self):
-        return library_storage.url(self.file_path)
+        if self.file_managed:
+            return library_storage.url(self.file_path)
+        else:
+            return reverse('track-stream', kwargs={'track_id': self.pk})
+#            root, ext = os.path.splitext(self.file_path)
+#            return '/player/stream/%s/song%s' % (self.pk, ext)

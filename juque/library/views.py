@@ -8,9 +8,14 @@ from django.db import connections
 from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
 from juque.library.forms import TrackForm
+from juque.library.utils import RangeFileWrapper
 from bootstrap.utils import local_page_range
+from wsgiref.util import FileWrapper
 import collections
 import binascii
+import re
+
+range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
 
 def index(request, genre=None, owner=None):
     q = request.GET.get('q', '').strip()
@@ -35,13 +40,6 @@ def index(request, genre=None, owner=None):
         'q': q,
         'genres': Genre.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks')[:10],
         'users': User.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks'),
-    })
-
-def track_edit(request, track_id):
-    track = get_object_or_404(Track.objects.select_related('artist', 'album', 'genre'), pk=track_id)
-    return render(request, 'library/track_edit.html', {
-        'track': track,
-        'form': TrackForm(instance=track),
     })
 
 def genre(request, slug):
@@ -150,6 +148,34 @@ def cleanup_tracks(request):
         })
     return render(request, 'library/cleanup_tracks.html', {
         'track_dupes': dupes,
+    })
+
+def track_stream(request, track_id, filename=None):
+    track = get_object_or_404(Track, pk=track_id)
+    fp = open(track.file_path, 'rb')
+    range_header = request.META.get('HTTP_RANGE', '').strip()
+    range_match = range_re.match(range_header)
+    if range_match:
+        start, end = range_match.groups()
+        start = int(start) if start else 0
+        end = int(end) if end else track.file_size - 1
+        if end >= track.file_size:
+            end = track.file_size - 1
+        length = end - start + 1
+        resp = HttpResponse(RangeFileWrapper(fp, offset=start, length=length), status=206, content_type=track.file_type)
+        resp['Content-Length'] = str(length)
+        resp['Content-Range'] = 'bytes %s-%s/%s' % (start, end, track.file_size)
+    else:
+        resp = HttpResponse(FileWrapper(fp), content_type=track.file_type)
+        resp['Content-Length'] = str(track.file_size)
+    resp['Accept-Ranges'] = 'bytes'
+    return resp
+
+def track_edit(request, track_id):
+    track = get_object_or_404(Track.objects.select_related('artist', 'album', 'genre'), pk=track_id)
+    return render(request, 'library/track_edit.html', {
+        'track': track,
+        'form': TrackForm(instance=track),
     })
 
 def track_play(request, track_id):
