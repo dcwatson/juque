@@ -26,6 +26,8 @@ class ArtistResource (ModelResource):
         }
 
 class AlbumResource (ModelResource):
+    artwork_url = fields.CharField(attribute='artwork_url')
+
     class Meta:
         queryset = Album.objects.all()
         serializer = PrettyJSONSerializer()

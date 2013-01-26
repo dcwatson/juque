@@ -77,5 +77,3 @@ class Track (MatchModel):
             return library_storage.url(self.file_path)
         else:
             return reverse('track-stream', kwargs={'track_id': self.pk})
-#            root, ext = os.path.splitext(self.file_path)
-#            return '/player/stream/%s/song%s' % (self.pk, ext)

@@ -8,6 +8,7 @@ from mutagen import id3, mp4, File as scan_file
 import mimetypes
 import datetime
 import logging
+import re
 import os
 
 logger = logging.getLogger(__name__)
@@ -95,9 +96,12 @@ def update_album(album, update_artist=True, update_tracks=True, update_artwork=T
     info = get_album_info(album.artist.name, album.name)
     if update_artist:
         album.artist.name = info['artist'].strip()
-        album.artist.musicbrainz_id = info['tracks']['track'][0]['artist']['mbid']
+        try:
+            album.artist.musicbrainz_id = info['tracks']['track'][0]['artist']['mbid']
+        except:
+            pass
         album.artist.save()
-    if update_tracks:
+    if update_tracks and isinstance(info['tracks'], (list, tuple)):
         for t in info['tracks']['track']:
             match = slugify(t['name'], strip_words=True)
             try:
@@ -106,11 +110,12 @@ def update_album(album, update_artist=True, update_tracks=True, update_artwork=T
                 track.track_number = int(t['@attr']['rank'])
                 track.musicbrainz_id = t['mbid'].strip()
                 track.save()
-            except Track.DoesNotExist:
+            except:
                 pass
     album.name = info['name'].strip()
     album.musicbrainz_id = info['mbid'].strip()
-    album.num_tracks = len(info['tracks']['track'])
+    if isinstance(info['tracks'], (list, tuple)):
+        album.num_tracks = len(info['tracks']['track'])
     try:
         s = info['releasedate'].strip().split(',')[0]
         album.release_date = datetime.datetime.strptime(s, '%d %b %Y').date()
@@ -118,7 +123,7 @@ def update_album(album, update_artist=True, update_tracks=True, update_artwork=T
         pass
     if update_artwork:
         try:
-            mime, data = get_album_artwork(album)
+            mime, data = get_album_artwork(album.artist.name, album.name)
             ext = mimetypes.guess_extension(mime)
             # What a ridiculous default extension for image/jpeg.
             if ext == '.jpe':
