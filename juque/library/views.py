@@ -1,4 +1,4 @@
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.conf import settings
 from django.http import HttpResponse
 from django.contrib.sites.models import Site
@@ -16,6 +16,9 @@ import binascii
 import re
 
 range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
+
+def home(request):
+    return redirect('library')
 
 def index(request, genre=None, owner=None):
     q = request.GET.get('q', '').strip()
