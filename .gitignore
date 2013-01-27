@@ -42,3 +42,4 @@ pybin
 samples
 cache
 local_settings.py
+fixtures

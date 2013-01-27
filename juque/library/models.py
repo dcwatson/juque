@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from juque.core.models import User
-from juque.library.utils import slugify, library_storage
+from juque.library.utils import slugify, library_storage, artwork_storage
 import os
 import re
 
@@ -40,7 +40,7 @@ class Album (MatchModel):
 
     def artwork_url(self):
         if self.artwork_path:
-            return library_storage.url(self.artwork_path)
+            return artwork_storage.url(self.artwork_path)
         return '%simg/cover-default.jpg' % settings.STATIC_URL
 
 class Genre (MatchModel):

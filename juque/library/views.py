@@ -152,6 +152,8 @@ def cleanup_tracks(request):
 
 def track_stream(request, track_id, filename=None):
     track = get_object_or_404(Track, pk=track_id)
+    if track.file_managed:
+        return HttpResponse('Cannot stream this track.', status=500)
     fp = open(track.file_path, 'rb')
     range_header = request.META.get('HTTP_RANGE', '').strip()
     range_match = range_re.match(range_header)
@@ -183,16 +185,3 @@ def track_play(request, track_id):
     return render(request, 'track.html', {
         'track': track,
     })
-
-def track_playlist(request, track_id):
-    track = get_object_or_404(Track, pk=track_id)
-    proto = 'http' if request.is_secure() else 'http'
-    base_url = '%s://%s' % (proto, Site.objects.get_current().domain)
-    return render(request, 'playlist.m3u8', {
-        'track': track,
-        'base_url': base_url,
-    }, content_type='application/x-mpegURL')
-
-def track_key(request, track_id):
-    track = get_object_or_404(Track, pk=track_id)
-    return HttpResponse(binascii.unhexlify(track.aes_key), content_type='application/octet-stream')

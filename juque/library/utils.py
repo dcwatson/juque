@@ -1,6 +1,6 @@
 from django.conf import settings
 from django.core.files.base import File, ContentFile
-from django.core.files.storage import FileSystemStorage
+from django.core.files.storage import get_storage_class
 from django.utils.text import slugify as django_slugify
 from juque.core.models import User
 from juque.lastfm import get_album_info, get_album_artwork, get_track_info
@@ -13,7 +13,13 @@ import os
 
 logger = logging.getLogger(__name__)
 
-library_storage = FileSystemStorage(location=settings.MEDIA_ROOT, base_url=settings.MEDIA_URL)
+# Build artwork storage backend.
+artwork_storage_cls = get_storage_class(settings.JUQUE_STORAGES['artwork']['backend'])
+artwork_storage = artwork_storage_cls(**settings.JUQUE_STORAGES['artwork']['options'])
+
+# Build library storage backend.
+library_storage_cls = get_storage_class(settings.JUQUE_STORAGES['library']['backend'])
+library_storage = library_storage_cls(**settings.JUQUE_STORAGES['library']['options'])
 
 # TODO: This list should probably be shortened. I will need to tweak it after experimenting with a larger sample.
 UNIMPORTANT_WORDS = ('a', 'an', 'be', 'and', 'in', 'is', 'it', 'of', 'on', 'or', 'so', 'the', 'to')
@@ -121,7 +127,7 @@ def update_album(album, update_artist=True, update_tracks=True, update_artwork=T
         album.release_date = datetime.datetime.strptime(s, '%d %b %Y').date()
     except:
         pass
-    if update_artwork:
+    if update_artwork and not album.artwork_path:
         try:
             mime, data = get_album_artwork(album.artist.name, album.name)
             ext = mimetypes.guess_extension(mime)
@@ -129,9 +135,9 @@ def update_album(album, update_artist=True, update_tracks=True, update_artwork=T
             if ext == '.jpe':
                 ext = '.jpg'
             path = 'album-art/%s%s' % (album.pk, ext)
-            if library_storage.exists(path):
-                library_storage.delete(path)
-            album.artwork_path = library_storage.save(path, ContentFile(data))
+            if artwork_storage.exists(path):
+                artwork_storage.delete(path)
+            album.artwork_path = artwork_storage.save(path, ContentFile(data))
         except:
             pass
     album.save()
@@ -147,7 +153,7 @@ def update_track(track, update_artist=True):
     track.save()
 
 def create_track(file_path, owner, copy=None):
-    from juque.library.models import Track, Artist, Album, Genre, library_storage
+    from juque.library.models import Track, Artist, Album, Genre
     if copy is None:
         copy = settings.JUQUE_COPY_SOURCE
     file_size = os.path.getsize(file_path)
@@ -209,7 +215,7 @@ def create_track(file_path, owner, copy=None):
         file_type=meta.mime[0],
     )
     if copy:
-        ext = mimetypes.guess_extension(t.file_type)
+        ext = os.path.splitext(t.file_path)[1]
         new_path = 'tracks/%s%s' % (t.pk, ext)
         with open(file_path, 'rb') as f:
             t.file_path = library_storage.save(new_path, File(f))
