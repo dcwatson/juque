@@ -19,6 +19,9 @@ class ArtistResource (ModelResource):
         serializer = PrettyJSONSerializer()
         filtering = {
             'id': ('exact',),
+            'name': ALL,
+            'slug': ('exact',),
+            'match_name': ('exact',),
         }
 
 class AlbumResource (ModelResource):
@@ -27,11 +30,25 @@ class AlbumResource (ModelResource):
     class Meta:
         queryset = Album.objects.all()
         serializer = PrettyJSONSerializer()
+        filtering = {
+            'id': ('exact',),
+            'name': ALL,
+            'slug': ('exact',),
+            'match_name': ('exact',),
+            'num_tracks': ALL,
+            'release_date': ALL,
+        }
 
 class GenreResource (ModelResource):
     class Meta:
         queryset = Genre.objects.all()
         serializer = PrettyJSONSerializer()
+        filtering = {
+            'id': ('exact',),
+            'name': ALL,
+            'slug': ('exact',),
+            'match_name': ('exact',),
+        }
 
 class TrackResource (ModelResource):
     artist = fields.ForeignKey(ArtistResource, 'artist', null=True, full=True)
@@ -45,4 +62,15 @@ class TrackResource (ModelResource):
         serializer = PrettyJSONSerializer()
         filtering = {
             'artist': ALL_WITH_RELATIONS,
+            'album': ALL_WITH_RELATIONS,
+            'genre': ALL_WITH_RELATIONS,
+            'date_added': ALL,
+            'date_modified': ALL,
+            'name': ALL,
+            'match_name': ('exact',),
+            'slug': ('exact',),
+            'track_number': ALL,
+            'play_count': ALL,
+            'file_type': ('exact',),
+            'file_size': ALL,
         }

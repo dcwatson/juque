@@ -82,7 +82,6 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'juque.core',
     'juque.library',
-    'juque.player',
     'juque.playlists',
     'bootstrap',
     'compressor',
