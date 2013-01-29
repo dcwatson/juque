@@ -1,0 +1,90 @@
+{% extends "playlists/base.html" %}
+
+{% block css %}
+<style>
+    span.track { font-weight: bold; display: block; }
+    span.artist { display: block; }
+</style>
+{% endblock %}
+
+{% block js %}
+<script>
+$(function() {
+    $('#search').typeahead({
+        minLength: 3,
+        items: 8,
+        source: function(query, process) {
+            $.ajax({
+                url: '{% url "ajax-tracks" %}',
+                data: {q: query, n: 8},
+                dataType: 'json',
+                success: function(data) {
+                    $.each(data, function(idx, item) {
+                        item.toString = function() { return JSON.stringify(item); }
+                    });
+                    process(data);
+                }
+            });
+        },
+        matcher: function(item) {
+            return true;
+        },
+        sorter: function(items) {
+            return items;
+        },
+        updater: function(item) {
+            var obj = JSON.parse(item);
+            var row = '<tr><td>' + obj.track + '</td>';
+            row += '<td>' + obj.artist + '</td>';
+            row += '<td>' + obj.length + '</td></tr>';
+            $('#tracks').append(row);
+            return '';
+        },
+        highlighter: function(item) {
+            var html = '<span class="track">' + item.track + '</span>';
+            var line = [];
+            if(item.artist)
+                line.push(item.artist);
+            if(item.album)
+                line.push(item.album);
+            if(line)
+                html += '<span class="artist">' + line.join(' &mdash; ') + '</span>';
+            return html;
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+
+<div class="span3">
+    <ul class="nav nav-list">
+        <li class="nav-header">Name</li>
+        <li><input type="text" style="width:100%;" /></li>
+        <li class="nav-header">Created</li>
+        <li class="disabled"><a href="">{{ playlist.date_created }}</a></li>
+        <li class="nav-header">Modified</li>
+        <li class="disabled"><a href="">{{ playlist.date_modified }}</a></li>
+    </ul>
+</div>
+
+<div class="span9">
+    <p class="lead">Select tracks below</p>
+    <form class="form-inline">
+        <input type="text" class="input-xlarge" id="search" placeholder="Search tracks..." />
+    </form>
+    <table class="table">
+        <thead><tr>
+            <th>Track</th>
+            <th>Artist</th>
+            <th>Length</th>
+        </tr></thead>
+        <tbody id="tracks">
+        </tbody>
+    </table>
+</div>
+
+</div>
+{% endblock %}

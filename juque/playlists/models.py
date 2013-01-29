@@ -1,9 +1,12 @@
 from django.db import models
 from django.utils import timezone
+from juque.core.models import User
 from juque.library.models import Track
 import json
 
 class BasePlaylist (models.Model):
+    owner = models.ForeignKey(User, related_name='%(class)ss')
+    name = models.CharField(max_length=200)
     date_created = models.DateTimeField(default=timezone.now, editable=False)
     date_modified = models.DateTimeField(editable=False)
 
@@ -14,32 +17,33 @@ class BasePlaylist (models.Model):
         self.date_modified = timezone.now()
         super(BasePlaylist, self).save(**kwargs)
 
-    def get_tracks(self):
+    def queryset(self):
         raise NotImplementedError()
 
+    def get_tracks(self):
+        return list(self.get_queryset())
+
 class Playlist (BasePlaylist):
-    name = models.CharField(max_length=200)
     tracks = models.ManyToManyField(Track, through='PlaylistTrack', related_name='playlists')
 
-    def get_tracks(self):
-        qs = Track.objects.filter(playlist_tracks__playlist=self).order_by('playlist_tracks__order').select_related('artist', 'album', 'genre')
-        return list(qs)
+    def queryset(self):
+        return Track.objects.filter(playlist_tracks__playlist=self).order_by('playlist_tracks__order').select_related('artist', 'album', 'genre')
 
 class PlaylistTrack (models.Model):
     playlist = models.ForeignKey(Playlist, related_name='playlist_tracks')
     track = models.ForeignKey(Track, related_name='playlist_tracks')
-    order = models.IntegerField(default=0)
+    order = models.IntegerField()
 
     class Meta:
         ordering = ('order',)
+        unique_together = ('id', 'order')
 
 class LivePlaylist (BasePlaylist):
-    name = models.CharField(max_length=200)
     criteria = models.TextField(blank=True)
     ordering = models.CharField(max_length=100)
     limit = models.IntegerField(default=0)
 
-    def get_tracks(self):
+    def queryset(self):
         orders = json.loads(self.ordering)
         qs = Track.objects.order_by(*orders).select_related('artist', 'album', 'genre')
         if self.criteria:
@@ -47,4 +51,3 @@ class LivePlaylist (BasePlaylist):
             qs = qs.filter(**crit)
         if self.limit:
             qs = qs[:self.limit]
-        return list(qs)

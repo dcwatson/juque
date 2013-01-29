@@ -49,6 +49,7 @@ STATICFILES_DIRS = (
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+    'compressor.finders.CompressorFinder',
 )
 
 SECRET_KEY = 'x)3e$lp92q=a)64id9ed)8mn3hxdhffp=u!f0&amp;^8h$q$mrzrkl'
@@ -128,6 +129,8 @@ LOGGING = {
         }
     }
 }
+
+COMPRESS_ENABLED = True
 
 JUQUE_SCAN_EXTENSIONS = ('mp3', 'm4a', 'mp4')
 JUQUE_COPY_SOURCE = True

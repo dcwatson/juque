@@ -1,4 +1,7 @@
 $(function() {
+    var cls = 'li.nav-' + $('body').attr('class');
+    $(cls).addClass('active');
+
     $('#q').focus().select();
 
     $('a.play').click(function() {
