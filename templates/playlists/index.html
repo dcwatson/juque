@@ -2,12 +2,29 @@
 {% load track %}
 
 {% block content %}
-<div class="row">
+<div class="row-fluid">
 
-<div class="span2">
+<div class="span3">
 </div>
 
-<div class="span10">
+<div class="span9">
+    <table class="table">
+        <thead><tr>
+            <th>Name</th>
+            <th>Owner</th>
+            <th>Tracks</th>
+        </tr></thead>
+        <tbody>
+            {% for p in playlists %}
+            <tr>
+                <td><a href="{% url "playlist-edit" playlist_id=p.pk %}">{{ p.name }}</a></td>
+                <td>{{ p.owner }}</td>
+                <td>{{ p.queryset.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <a href="{% url "playlist-create" %}" class="btn">Create Playlist</a>
 </div>
 
 </div>

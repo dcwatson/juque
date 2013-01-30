@@ -21,7 +21,7 @@ class BasePlaylist (models.Model):
         raise NotImplementedError()
 
     def get_tracks(self):
-        return list(self.get_queryset())
+        return list(self.queryset())
 
 class Playlist (BasePlaylist):
     tracks = models.ManyToManyField(Track, through='PlaylistTrack', related_name='playlists')

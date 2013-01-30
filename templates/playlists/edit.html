@@ -1,9 +1,13 @@
 {% extends "playlists/base.html" %}
+{% load bootstrap %}
+{% load track %}
 
 {% block css %}
 <style>
     span.track { font-weight: bold; display: block; }
     span.artist { display: block; }
+    input.playlist-name { font-size: 2em; padding: 0.5em; display: block; }
+    .right { text-align: right !important; }
 </style>
 {% endblock %}
 
@@ -34,9 +38,13 @@ $(function() {
         },
         updater: function(item) {
             var obj = JSON.parse(item);
-            var row = '<tr><td>' + obj.track + '</td>';
+            var row = '<tr>';
+            row += '<td><i class="icon-reorder handle"></i></td>';
+            row += '<td>' + obj.track + '<input type="hidden" name="tracks" value="' + obj.pk + '" /></td>';
             row += '<td>' + obj.artist + '</td>';
-            row += '<td>' + obj.length + '</td></tr>';
+            row += '<td class="right">' + obj.length + '</td>';
+            row += '<td class="right"><a class="btn btn-mini delete"><i class="icon-remove"></i></a></td>';
+            row += '</tr>';
             $('#tracks').append(row);
             return '';
         },
@@ -52,17 +60,27 @@ $(function() {
             return html;
         }
     });
+    $('#tracks').sortable({
+        axis: 'y',
+        cursor: 'move',
+        handle: '.handle'
+    });
+    $('body').on('click', 'a.delete', function(e) {
+        var row = $(this).parent().parent();
+        row.remove();
+    });
+    $('#search').focus().select();
 });
 </script>
 {% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row-fluid">
 
 <div class="span3">
     <ul class="nav nav-list">
-        <li class="nav-header">Name</li>
-        <li><input type="text" style="width:100%;" /></li>
+        <li class="nav-header">Owner</li>
+        <li class="disabled"><a href="">{{ playlist.owner }}</a></li>
         <li class="nav-header">Created</li>
         <li class="disabled"><a href="">{{ playlist.date_created }}</a></li>
         <li class="nav-header">Modified</li>
@@ -71,19 +89,34 @@ $(function() {
 </div>
 
 <div class="span9">
-    <p class="lead">Select tracks below</p>
-    <form class="form-inline">
-        <input type="text" class="input-xlarge" id="search" placeholder="Search tracks..." />
+    <form action="" method="post">
+        <input type="text" class="input-xxlarge playlist-name" name="name" id="id_name" value="{{ playlist.name }}" />
+        <input type="text" class="input-xlarge" id="search" placeholder="Start typing to add a track..." />
+        <table class="table table-striped playlist-tracks">
+            <thead><tr>
+                <th></th>
+                <th>Track</th>
+                <th>Artist</th>
+                <th class="right">Length</th>
+                <th class="right"></th>
+            </tr></thead>
+            <tbody id="tracks">
+                {% for track in playlist.get_tracks %}
+                <tr>
+                    <td><i class="icon-reorder handle"></i></td>
+                    <td>{{ track.name }}<input type="hidden" name="tracks" value="{{ track.pk }}" /></td>
+                    <td>{{ track.artist }}</td>
+                    <td class="right">{{ track.length|track_length }}</td>
+                    <td class="right"><a class="btn btn-mini delete"><i class="icon-remove"></i></a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Save Playlist</button>
+            <button type="button" class="btn">Cancel</button>
+        </div>
     </form>
-    <table class="table">
-        <thead><tr>
-            <th>Track</th>
-            <th>Artist</th>
-            <th>Length</th>
-        </tr></thead>
-        <tbody id="tracks">
-        </tbody>
-    </table>
 </div>
 
 </div>
