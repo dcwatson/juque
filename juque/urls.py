@@ -8,7 +8,9 @@ from tastypie.api import Api
 admin.autodiscover()
 
 urlpatterns = patterns('',
-    url(r'^$', 'juque.library.views.home'),
+    url(r'^$', 'juque.core.views.home', name='home'),
+    url(r'^login/$', 'juque.core.views.login', name='login'),
+    url(r'^logout/$', 'juque.core.views.logout', name='logout'),
     url(r'^library/', include('juque.library.urls')),
     url(r'^playlists/', include('juque.playlists.urls')),
     url(r'^admin/', include(admin.site.urls)),

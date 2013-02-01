@@ -77,3 +77,8 @@ class Track (MatchModel):
             return library_storage.url(self.file_path)
         else:
             return reverse('track-stream', kwargs={'track_id': self.pk})
+
+class PlayHistory (models.Model):
+    track = models.ForeignKey(Track, related_name='play_history')
+    user = models.ForeignKey(User, related_name='play_history')
+    date_played = models.DateTimeField(default=timezone.now)

@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.conf import settings
 from django.http import HttpResponse
 from django.contrib.sites.models import Site
+from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.db.models import Q, Count
 from django.db import connections
@@ -17,9 +18,7 @@ import re
 
 range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
 
-def home(request):
-    return redirect('library')
-
+@login_required
 def index(request, genre=None, owner=None):
     q = request.GET.get('q', '').strip()
     qs = Track.objects.select_related('artist', 'album').order_by('artist__name', 'album__name', 'name')
@@ -45,10 +44,12 @@ def index(request, genre=None, owner=None):
         'users': User.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks'),
     })
 
+@login_required
 def genre(request, slug):
     genre = get_object_or_404(Genre, slug=slug)
     return index(request, genre=genre)
 
+@login_required
 def user(request, uid):
     owner = get_object_or_404(User, pk=uid)
     return index(request, owner=owner)

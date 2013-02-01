@@ -1,11 +1,13 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
 from django.db.models import Q
+from django.contrib.auth.decorators import login_required
 from juque.playlists.models import Playlist
 from juque.library.models import Track
 from juque.library.templatetags.track import track_length
 import json
 
+@login_required
 def index(request):
     return render(request, 'playlists/index.html', {
         'playlists': Playlist.objects.select_related('owner'),
@@ -27,13 +29,16 @@ def playlist_form(request, playlist):
         'playlist': playlist,
     })
 
+@login_required
 def playlist_create(request):
     return playlist_form(request, Playlist(owner=request.user, name='Untitled Playlist'))
 
+@login_required
 def playlist_edit(request, playlist_id):
     playlist = get_object_or_404(Playlist, pk=playlist_id)
     return playlist_form(request, playlist)
 
+@login_required
 def ajax_tracks(request):
     q = request.GET.get('q', '').strip()
     try:

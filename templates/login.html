@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load bootstrap %}
+
+{% block content %}
+<div class="row-fluid">
+    <form class="form-horizontal" method="post" action="">
+        {% bootstrap_form form %}
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Log In</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
