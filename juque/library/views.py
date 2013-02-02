@@ -29,7 +29,7 @@ def index(request, genre=None, owner=None):
     if q:
         q_obj = Q(name__icontains=q) | Q(artist__name__icontains=q) | Q(album__name__icontains=q)
         qs = qs.filter(q_obj)
-    paginator = Paginator(qs, 15)
+    paginator = Paginator(qs, 20)
     try:
         page = paginator.page(request.GET.get('page'))
     except PageNotAnInteger:

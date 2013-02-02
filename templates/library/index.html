@@ -5,12 +5,22 @@
 <div class="row-fluid">
 
 <div class="span2">
+    <div class="player">
+        <img src="{{ STATIC_URL }}img/cover.png" alt="" class="span12" />
+        <audio id="player" controls></audio>
+        <div class="overlay">
+            <div class="track">Now Playing</div>
+            <div class="artist">-</div>
+        </div>
+    </div>
+
     <ul class="nav nav-list">
         <li class="nav-header">Owner</li>
         {% for u in users %}
         <li><a href="{% url "library-user" uid=u.pk %}">{{ u }} ({{ u.num_tracks }})</a></li>
         {% endfor %}
     </ul>
+
     <ul class="nav nav-list" style="margin-top:20px;">
         <li class="nav-header">Popular Genres</li>
         {% for g in genres %}
@@ -20,13 +30,6 @@
 </div>
 
 <div class="span10">
-
-<div class="player">
-    <img src="{{ STATIC_URL }}img/cover-default.jpg" alt="" width="100" height="100" class="pull-left" />
-    <div class="track">Now Playing</div>
-    <div class="artist">None</div>
-    <audio id="player" controls></audio>
-</div>
 
 <table class="table table-condensed">
     <thead>

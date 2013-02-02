@@ -88,6 +88,7 @@ INSTALLED_APPS = (
     'bootstrap',
     'compressor',
     'south',
+    'tastypie',
 )
 
 LOGGING = {

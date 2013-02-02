@@ -2,8 +2,6 @@ $(function() {
     var cls = 'li.nav-' + $('body').attr('class');
     $(cls).addClass('active');
 
-    $('#q').focus().select();
-
     $('a.play').click(function() {
         var url = $(this).data('track-url');
         $('div.player img').attr('src', $(this).data('cover-url'));
@@ -16,4 +14,8 @@ $(function() {
     });
 
     $('select').chosen();
+
+    if(initial_field) {
+        $('#' + initial_field).focus().select();
+    }
 });

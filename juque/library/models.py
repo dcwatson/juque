@@ -41,7 +41,7 @@ class Album (MatchModel):
     def artwork_url(self):
         if self.artwork_path:
             return artwork_storage.url(self.artwork_path)
-        return '%simg/cover-default.jpg' % settings.STATIC_URL
+        return '%simg/cover.png' % settings.STATIC_URL
 
 class Genre (MatchModel):
     pass
