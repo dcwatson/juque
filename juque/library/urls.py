@@ -10,4 +10,5 @@ urlpatterns = patterns('juque.library.views',
     url(r'^cleanup/tracks/$', 'cleanup_tracks', name='cleanup-tracks'),
     url(r'^track/(?P<track_id>\d+)/$', 'track_edit', name='track-edit'),
     url(r'^track/(?P<track_id>\d+)/stream/$', 'track_stream', name='track-stream'),
+    url(r'^ajax/page/$', 'ajax_page', name='ajax-page'),
 )

@@ -19,27 +19,41 @@ import re
 range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
 
 @login_required
-def index(request, genre=None, owner=None):
-    q = request.GET.get('q', '').strip()
+def ajax_page(request):
+    query = request.GET.get('q', '').strip()
+    genre_id = request.GET.get('g', '').strip()
+    user_id = request.GET.get('u', '').strip()
+    try:
+        page_num = int(request.GET['p'])
+    except:
+        page_num = 1
     qs = Track.objects.select_related('artist', 'album').order_by('artist__name', 'album__name', 'name')
-    if genre:
-        qs = qs.filter(genre=genre)
-    if owner:
-        qs = qs.filter(owner=owner)
-    if q:
-        q_obj = Q(name__icontains=q) | Q(artist__name__icontains=q) | Q(album__name__icontains=q)
+    if genre_id:
+        qs = qs.filter(genre__pk=genre_id)
+    if user_id:
+        qs = qs.filter(owner__pk=user_id)
+    if query:
+        q_obj = Q(name__icontains=query) | Q(artist__name__icontains=query) | Q(album__name__icontains=query)
         qs = qs.filter(q_obj)
     paginator = Paginator(qs, 20)
     try:
-        page = paginator.page(request.GET.get('page'))
-    except PageNotAnInteger:
-        page = paginator.page(1)
+        page = paginator.page(page_num)
     except EmptyPage:
         page = paginator.page(paginator.num_pages)
-    return render(request, 'library/index.html', {
+    return render(request, 'library/page.html', {
         'page': page,
-        'page_range': local_page_range(page, 15),
-        'q': q,
+        'page_range': local_page_range(page, 11),
+        'query': {
+            'q': query,
+            'u': user_id,
+            'g': genre_id,
+        },
+    })
+
+@login_required
+def index(request, genre=None, owner=None):
+    return render(request, 'library/index.html', {
+        'q': request.GET.get('q', '').strip(),
         'genres': Genre.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks')[:10],
         'users': User.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks'),
     })
@@ -54,6 +68,7 @@ def user(request, uid):
     owner = get_object_or_404(User, pk=uid)
     return index(request, owner=owner)
 
+@login_required
 def cleanup_artists(request):
     if request.method == 'POST':
         artist_map = {}
@@ -85,6 +100,7 @@ def cleanup_artists(request):
         'artist_groups': groups,
     })
 
+@login_required
 def cleanup_albums(request):
     if request.method == 'POST':
         fixes = []
@@ -119,6 +135,7 @@ def cleanup_albums(request):
         'album_dupes': dupes,
     })
 
+@login_required
 def cleanup_tracks(request):
     # TODO: could include album as part of the dupe-checking, but it would catch as many
     # TODO: could probably also refactor/combine this and cleanup_albums quite a bit
