@@ -171,7 +171,7 @@ def cleanup_tracks(request):
         'track_dupes': dupes,
     })
 
-def track_stream(request, track_id, filename=None):
+def track_stream(request, track_id, extension):
     track = get_object_or_404(Track, pk=track_id)
     if track.file_managed:
         return HttpResponse('Cannot stream this track.', status=500)

@@ -76,7 +76,8 @@ class Track (MatchModel):
         if self.file_managed:
             return library_storage.url(self.file_path)
         else:
-            return reverse('track-stream', kwargs={'track_id': self.pk})
+            ext = os.path.splitext(self.file_path)[1][1:]
+            return reverse('track-stream', kwargs={'track_id': self.pk, 'extension': ext})
 
 class PlayHistory (models.Model):
     track = models.ForeignKey(Track, related_name='play_history')
