@@ -1,10 +1,13 @@
 from django.conf import settings
 from django.core.files.base import File, ContentFile
 from django.core.files.storage import get_storage_class
+from django.core.cache import cache
 from django.utils.text import slugify as django_slugify
 from juque.core.models import User
 from juque.lastfm import get_album_info, get_album_artwork, get_track_info
 from mutagen import id3, mp4, File as scan_file
+from PIL import Image
+from StringIO import StringIO
 import mimetypes
 import datetime
 import logging
@@ -264,8 +267,10 @@ class RangeFileWrapper (object):
             return data
 
 def render_thumbnail(album):
-    from PIL import Image
-    from StringIO import StringIO
+    cache_key = 'thumbnail-%s' % album.artwork_path
+    data = cache.get(cache_key)
+    if data:
+        return data
     im = Image.open(artwork_storage.path(album.artwork_path))
     thumb = Image.new('RGB', (640, 640))
     w, h = im.size
@@ -282,4 +287,6 @@ def render_thumbnail(album):
     data = StringIO()
     thumb.save(data, 'png')
     data.seek(0)
-    return data.getvalue()
+    data = data.getvalue()
+    cache.set(cache_key, data, 60 * 60 * 24 * 7)
+    return data

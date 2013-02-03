@@ -4,6 +4,7 @@ django-compressor
 django-storages
 django-tastypie>0.9.11
 mutagen
+PIL
 pycrypto
 pytz
 requests
