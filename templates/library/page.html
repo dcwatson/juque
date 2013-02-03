@@ -1,6 +1,6 @@
 {% load track %}
 
-<table class="table table-condensed">
+<table class="table table-condensed table-striped">
     <thead>
         <tr>
             <th></th>
@@ -16,7 +16,7 @@
         {% for track in page %}
         <tr>
             <td class="nowrap">
-                <a class="play" data-track-url="{{ track.url }}" data-artist="{{ track.artist }}" data-title="{{ track }}" data-cover-url="{{ track.album.artwork_url }}" href="#play"><i class="icon-play-circle"></i></a>
+                <a class="play" data-track-id="{{ track.pk }}" data-track-url="{{ track.url }}" data-artist="{{ track.artist }}" data-title="{{ track }}" data-cover-url="{{ track.album.artwork_url }}" href="#play"><i class="icon-play-circle"></i></a>
                 <a class="" href="#download"><i class="icon-download"></i></a>
             </td>
             <td><a href="{% url "track-edit" track_id=track.pk %}">{{ track }}</a></td>

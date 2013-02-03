@@ -1,0 +1,71 @@
+{% extends "library/base.html" %}
+{% load track %}
+{% load humanize %}
+
+{% block section %}stats{% endblock %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span12">
+        <p class="lead">Total Library Size &mdash; {{ total.tracks|intcomma }} songs, {{ total.file_size|filesizeformat }} ({{ total.length|track_length:1 }})</p>
+        <div class="row-fluid">
+            <div class="span4">
+                <h3>Most Played</h3>
+                <table class="table table-condensed table-striped table-bordered">
+                    <thead><tr>
+                        <th>Song</th>
+                        <th>Artist</th>
+                        <th>Played</th>
+                    </tr></thead>
+                    <tbody>
+                        {% for t in played %}
+                        <tr>
+                            <td>{{ t }}</td>
+                            <td>{{ t.artist }}</td>
+                            <td>{{ t.play_count|intcomma }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="span4">
+                <h3>Recently Added</h3>
+                <table class="table table-condensed table-striped table-bordered">
+                    <thead><tr>
+                        <th>Song</th>
+                        <th>Artist</th>
+                        <th>Added</th>
+                    </tr></thead>
+                    <tbody>
+                        {% for t in added %}
+                        <tr>
+                            <td>{{ t }}</td>
+                            <td>{{ t.artist }}</td>
+                            <td>{{ t.date_added.date }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="span4">
+                <h3>Popular Artists</h3>
+                <table class="table table-condensed table-striped table-bordered">
+                    <thead><tr>
+                        <th>Artist</th>
+                        <th>Songs</th>
+                    </tr></thead>
+                    <tbody>
+                        {% for a in artists %}
+                        <tr>
+                            <td>{{ a }}</td>
+                            <td>{{ a.num_tracks }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

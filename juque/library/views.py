@@ -4,7 +4,7 @@ from django.http import HttpResponse
 from django.contrib.sites.models import Site
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.db.models import Q, Count
+from django.db.models import Q, Count, Sum, F
 from django.db import connections
 from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
@@ -17,6 +17,13 @@ import binascii
 import re
 
 range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
+
+@login_required
+def ajax_play(request, track_id):
+    track = get_object_or_404(Track, pk=track_id)
+    track.play_history.create(user=request.user)
+    Track.objects.filter(pk=track.pk).update(play_count=F('play_count') + 1)
+    return HttpResponse('OK')
 
 @login_required
 def ajax_page(request):
@@ -56,6 +63,15 @@ def index(request, genre=None, owner=None):
         'q': request.GET.get('q', '').strip(),
         'genres': Genre.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks')[:10],
         'users': User.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks'),
+    })
+
+@login_required
+def stats(request):
+    return render(request, 'library/stats.html', {
+        'total': Track.objects.aggregate(tracks=Count('id'), length=Sum('length'), file_size=Sum('file_size')),
+        'added': Track.objects.select_related('artist').order_by('-date_added', '-id')[:10],
+        'artists': Artist.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks')[:10],
+        'played': Track.objects.filter(play_count__gt=0).select_related('artist').order_by('-play_count')[:10],
     })
 
 @login_required

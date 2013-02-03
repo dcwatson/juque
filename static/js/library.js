@@ -19,12 +19,18 @@ $(function() {
 
     $('body').on('click', 'a.play', function() {
         var url = $(this).data('track-url');
+        var id = $(this).data('track-id');
         $('div.player img').attr('src', $(this).data('cover-url'));
         $('div.player .track').text($(this).data('title'));
         $('div.player .artist').text($(this).data('artist'));
         var player = document.getElementById('player');
         $(player).attr('src', url);
         player.play();
+
+        $.ajax({
+            url: '/library/ajax/play/' + id + '/'
+        });
+
         return false;
     });
 
