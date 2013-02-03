@@ -262,3 +262,24 @@ class RangeFileWrapper (object):
                 raise StopIteration()
             self.remaining -= len(data)
             return data
+
+def render_thumbnail(album):
+    from PIL import Image
+    from StringIO import StringIO
+    im = Image.open(artwork_storage.path(album.artwork_path))
+    thumb = Image.new('RGB', (640, 640))
+    w, h = im.size
+    if w >= h:
+        ratio = 640.0 / w
+        new_h = int(h * ratio)
+        im = im.resize((640, new_h), Image.ANTIALIAS)
+        thumb.paste(im, (0, (640 - new_h) / 2))
+    else:
+        ratio = 640.0 / h
+        new_w = int(w * ratio)
+        im = im.resize((new_w, 640), Image.ANTIALIAS)
+        thumb.paste(im, ((640 - new_w) / 2, 0))
+    data = StringIO()
+    thumb.save(data, 'png')
+    data.seek(0)
+    return data.getvalue()

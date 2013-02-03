@@ -9,7 +9,7 @@ from django.db import connections
 from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
 from juque.library.forms import TrackForm
-from juque.library.utils import RangeFileWrapper
+from juque.library.utils import RangeFileWrapper, render_thumbnail
 from bootstrap.utils import local_page_range
 from wsgiref.util import FileWrapper
 import collections
@@ -67,6 +67,11 @@ def genre(request, slug):
 def user(request, uid):
     owner = get_object_or_404(User, pk=uid)
     return index(request, owner=owner)
+
+def album_thumbnail(request, album_id):
+    album = get_object_or_404(Album, pk=album_id)
+    data = render_thumbnail(album)
+    return HttpResponse(data, content_type='image/png')
 
 @login_required
 def cleanup_artists(request):

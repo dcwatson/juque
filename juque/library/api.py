@@ -57,7 +57,7 @@ class TrackResource (ModelResource):
     url = fields.CharField(attribute='url')
 
     class Meta:
-        queryset = Track.objects.select_related('artist', 'album', 'genre')
+        queryset = Track.objects.select_related('artist', 'album', 'genre').order_by('artist__name', 'album__name', 'track_number', 'name')
         excludes = ('file_managed', 'file_path')
         serializer = PrettyJSONSerializer()
         filtering = {
