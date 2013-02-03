@@ -4,6 +4,7 @@
 {% block js %}
 <script>
     var page_url = '{% url "ajax-page" %}';
+    var playlist_add_url = '{% url "ajax-playlist-add" %}';
 </script>
 <script src="{{ STATIC_URL }}js/library.js"></script>
 {% endblock %}
@@ -33,6 +34,7 @@
         </ul>
     </div>
     <div class="span10">
+        <div id="message"></div>
         <div id="page">
         </div>
     </div>

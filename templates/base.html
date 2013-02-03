@@ -29,12 +29,13 @@
                 <div class="navbar-inner">
                     <a class="brand" href="{% url "home" %}">Juque</a>
                     <ul class="nav">
-                        <li class="nav-library"><a href="{% url "library" %}">Library</a></li>
-                        <li class="nav-playlists"><a href="{% url "playlists" %}">Playlists</a></li>
-                        <li class="nav-stats"><a href="{% url "stats" %}">Statistics</a></li>
+                        <li class="nav-library"><a href="{% url "library" %}"><i class="icon-headphones"></i> Library</a></li>
+                        <li class="nav-playlists"><a href="{% url "playlists" %}"><i class="icon-list"></i> Playlists</a></li>
+                        <li class="nav-stats"><a href="{% url "stats" %}"><i class="icon-bar-chart"></i> Statistics</a></li>
                         {% if user.is_admin %}
                         <li class="nav-admin dropdown">
                             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+                                <i class="icon-wrench"></i>
                                 Admin
                                 <b class="caret"></b>
                             </a>
@@ -46,7 +47,7 @@
                         </li>
                         {% endif %}
                         {% if user.is_authenticated %}
-                        <li><a href="{% url "logout" %}">Log Out</a></li>
+                        <li><a href="{% url "logout" %}"><i class="icon-signout"></i> Log Out</a></li>
                         {% endif %}
                     </ul>
                     <form class="navbar-search pull-right" id="search-form" action="{% url "library" %}" method="get">

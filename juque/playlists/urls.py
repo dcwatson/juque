@@ -6,4 +6,5 @@ urlpatterns = patterns('juque.playlists.views',
     url(r'^new/$', 'playlist_create', name='playlist-create'),
     url(r'^(?P<playlist_id>\d+)/edit/$', 'playlist_edit', name='playlist-edit'),
     url(r'^ajax/tracks/$', 'ajax_tracks', name='ajax-tracks'),
+    url(r'^ajax/add/$', 'ajax_add', name='ajax-playlist-add'),
 )

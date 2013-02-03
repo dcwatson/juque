@@ -56,3 +56,18 @@ def ajax_tracks(request):
             'length': track_length(t.length),
         })
     return HttpResponse(json.dumps(info), content_type='application/json')
+
+@login_required
+def ajax_add(request):
+    playlist = get_object_or_404(Playlist, pk=request.GET['playlist'])
+    track = get_object_or_404(Track, pk=request.GET['track'])
+    try:
+        next_order = playlist.playlist_tracks.aggregate(last_order=Max('order'))['last_order'] + 1
+    except:
+        next_order = 1
+    try:
+        playlist.playlist_tracks.create(track=track, order=next_order)
+        result = {'type': 'success', 'message': '"%s" was added to the "%s" playlist.' % (track, playlist)}
+    except:
+        result = {'type': 'error', 'message': '"%s" is already on the "%s" playlist.' % (track, playlist)}
+    return HttpResponse(json.dumps(result), content_type='application/json')

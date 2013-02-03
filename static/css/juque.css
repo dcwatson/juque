@@ -1,5 +1,6 @@
 body { padding-top: 30px; }
 .nowrap { white-space: nowrap; }
+.right { text-align: right !important; }
 div.player { position: relative; margin-bottom: 30px; }
 div.player .overlay {
     background-color: rgba(0, 0, 0, 0.6);

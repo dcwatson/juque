@@ -13,6 +13,9 @@ class BasePlaylist (models.Model):
     class Meta:
         abstract = True
 
+    def __unicode__(self):
+        return self.name
+
     def save(self, **kwargs):
         self.date_modified = timezone.now()
         super(BasePlaylist, self).save(**kwargs)
@@ -36,7 +39,10 @@ class PlaylistTrack (models.Model):
 
     class Meta:
         ordering = ('order',)
-        unique_together = ('id', 'order')
+        unique_together = (
+            ('playlist', 'track'),
+            ('id', 'order'),
+        )
 
 class LivePlaylist (BasePlaylist):
     criteria = models.TextField(blank=True)

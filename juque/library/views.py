@@ -10,6 +10,7 @@ from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
 from juque.library.forms import TrackForm
 from juque.library.utils import RangeFileWrapper, render_thumbnail
+from juque.playlists.models import Playlist
 from bootstrap.utils import local_page_range
 from wsgiref.util import FileWrapper
 import collections
@@ -55,6 +56,7 @@ def ajax_page(request):
             'u': user_id,
             'g': genre_id,
         },
+        'playlists': Playlist.objects.all(),
     })
 
 @login_required

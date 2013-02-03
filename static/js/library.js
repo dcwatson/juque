@@ -10,6 +10,13 @@ function load_page(query) {
     });
 }
 
+function show_alert(msg, type) {
+    type = type || '';
+    var close = '<a href="#" class="close" data-dismiss="alert">&times;</a>';
+    var html = '<div class="alert alert-' + type + '"><strong>' + type.toUpperCase() + '</strong> ' + msg + close + '</div>';
+    $('#message').append(html);
+}
+
 $(function() {
     $('body').on('click', 'a.filter', function(e) {
         var query = $(this).data('query');
@@ -17,7 +24,7 @@ $(function() {
         return false;
     });
 
-    $('body').on('click', 'a.play', function() {
+    $('body').on('click', 'a.play', function(e) {
         var url = $(this).data('track-url');
         var id = $(this).data('track-id');
         $('div.player img').attr('src', $(this).data('cover-url'));
@@ -32,6 +39,20 @@ $(function() {
         });
 
         return false;
+    });
+
+    $('body').on('click', 'a.playlist-add', function(e) {
+        $.ajax({
+            url: playlist_add_url,
+            data: {
+                track: $(this).data('track'),
+                playlist: $(this).data('playlist')
+            },
+            dataType: 'json',
+            success: function(data) {
+                show_alert(data.message, data.type);
+            }
+        });
     });
 
     $('#search-form').submit(function() {

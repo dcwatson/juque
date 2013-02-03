@@ -54,7 +54,7 @@ TAG_MAPPERS = {
 }
 
 def slugify(name, strip_words=False, strip_parens=True):
-    name = name.lower()
+    name = unicode(name).lower()
     if strip_parens:
         name = re.sub(r'\([^\)]*\)', '', name)
     if strip_words:
