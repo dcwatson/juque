@@ -56,7 +56,7 @@ def ajax_page(request):
             'u': user_id,
             'g': genre_id,
         },
-        'playlists': Playlist.objects.all(),
+        'playlists': list(Playlist.objects.all()),
     })
 
 @login_required

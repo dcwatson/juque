@@ -1,17 +1,19 @@
 body { padding-top: 30px; }
 .nowrap { white-space: nowrap; }
 .right { text-align: right !important; }
-div.player { position: relative; margin-bottom: 30px; }
-div.player .overlay {
+
+div.artwork { position: relative; }
+div.artwork img { display: block; width: 100%; }
+div.artwork > div.overlay {
     background-color: rgba(0, 0, 0, 0.6);
     color: white;
     position: absolute;
-    top: 0px;
+    bottom: 0px;
     left: 0px;
     width: 100%;
     height: 3.5em;
 }
-div.player .track {
+div.artwork .track {
     position: absolute;
     top: 0px;
     left: 5px;
@@ -25,7 +27,7 @@ div.player .track {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-div.player .artist {
+div.artwork .artist {
     position: absolute;
     top: 2em;
     left: 5px;
@@ -38,4 +40,5 @@ div.player .artist {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-#player { width: 100%; display: block; }
+#player { width: 100%; display: block; margin-bottom: 30px; }
+input.track-select, input.select-all { position: relative; top: -3px; }

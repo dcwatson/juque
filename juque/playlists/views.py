@@ -25,8 +25,10 @@ def playlist_form(request, playlist):
             except:
                 pass
         return redirect('playlist-edit', playlist_id=playlist.pk)
+    tracks = playlist.get_tracks() if playlist.pk else Track.objects.filter(pk__in=request.GET.getlist('t'))
     return render(request, 'playlists/edit.html', {
         'playlist': playlist,
+        'tracks': tracks,
     })
 
 @login_required
@@ -60,14 +62,19 @@ def ajax_tracks(request):
 @login_required
 def ajax_add(request):
     playlist = get_object_or_404(Playlist, pk=request.GET['playlist'])
-    track = get_object_or_404(Track, pk=request.GET['track'])
+    tracks = Track.objects.filter(pk__in=request.GET.getlist('tracks'))
     try:
         next_order = playlist.playlist_tracks.aggregate(last_order=Max('order'))['last_order'] + 1
     except:
         next_order = 1
-    try:
-        playlist.playlist_tracks.create(track=track, order=next_order)
-        result = {'type': 'success', 'message': '"%s" was added to the "%s" playlist.' % (track, playlist)}
-    except:
-        result = {'type': 'error', 'message': '"%s" is already on the "%s" playlist.' % (track, playlist)}
-    return HttpResponse(json.dumps(result), content_type='application/json')
+    num_added = 0
+    for track in tracks:
+        try:
+            playlist.playlist_tracks.create(track=track, order=next_order)
+            next_order += 1
+            num_added += 1
+        except:
+            pass
+    return HttpResponse(json.dumps({
+        'message': 'Added %s track(s) to %s.' % (num_added, playlist)
+    }), content_type='application/json')

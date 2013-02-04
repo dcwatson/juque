@@ -2,11 +2,13 @@
 {% load bootstrap %}
 {% load track %}
 
+{% block initial-field %}id_name{% endblock %}
+
 {% block css %}
 <style>
     span.track { font-weight: bold; display: block; }
     span.artist { display: block; }
-    input.playlist-name { font-size: 2em; padding: 0.5em; display: block; }
+    input.playlist-name { font-size: 2em; padding: 0.5em 0.25em; display: block; }
     .right { text-align: right !important; }
 </style>
 {% endblock %}
@@ -45,7 +47,7 @@
                 <th class="right"></th>
             </tr></thead>
             <tbody id="tracks">
-                {% for track in playlist.get_tracks %}
+                {% for track in tracks %}
                 <tr>
                     <td><i class="icon-reorder handle"></i></td>
                     <td>{{ track.name }}<input type="hidden" name="tracks" value="{{ track.pk }}" /></td>

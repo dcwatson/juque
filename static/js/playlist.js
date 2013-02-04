@@ -57,5 +57,4 @@ $(function() {
         var row = $(this).parent().parent();
         row.remove();
     });
-    $('#search').focus().select();
 });

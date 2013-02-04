@@ -3,7 +3,7 @@
 <table class="table table-condensed table-striped">
     <thead>
         <tr>
-            <th></th>
+            <th><input type="checkbox" class="select-all" /></th>
             <th>Track</th>
             <th>Artist</th>
             <th>Album</th>
@@ -11,30 +11,11 @@
             <th>Length</th>
         </tr>
     </thead>
-    <tbody>
+    <tbody class="tracks">
         {% for track in page %}
-        <tr class="stretch">
-            <td class="nowrap">
-                <div class="btn-group">
-                    <a class="btn btn-mini play" data-track-id="{{ track.pk }}" data-track-url="{{ track.url }}" data-artist="{{ track.artist }}" data-title="{{ track }}" data-cover-url="{{ track.album.artwork_url }}" href="#play"><i class="icon-play-circle"></i> Play</a>
-                    <a class="btn btn-mini dropdown-toggle" data-toggle="dropdown" href="#">
-                        <span class="caret"></span>
-                    </a>
-                    <ul class="dropdown-menu">
-                        <li><a href=""><i class="icon-list"></i> New Playlist</a>
-                        <li class="dropdown-submenu">
-                            <a tabindex="-1" href="#"><i class="icon-plus-sign"></i> Add to Playlist</a>
-                            <ul class="dropdown-menu">{% for p in playlists %}
-                                <li><a class="playlist-add" data-track="{{ track.pk }}" data-playlist="{{ p.pk }}" href="#add">{{ p }}</a></li>
-                            {% endfor %}</ul>
-                        </li>
-                        <li class="divider"></li>
-                        <li><a href=""><i class="icon-download"></i> Download Track</a>
-                        <li><a href=""><i class="icon-info-sign"></i> More Information</a>
-                    </ul>
-                </div>
-            </td>
-            <td><a href="{% url "track-edit" track_id=track.pk %}">{{ track }}</a></td>
+        <tr>
+            <td><input type="checkbox" class="track-select" value="{{ track.pk }}" /></td>
+            <td><a class="play" data-track-id="{{ track.pk }}" data-track-url="{{ track.url }}" data-artist="{{ track.artist }}" data-title="{{ track }}" data-cover-url="{{ track.album.artwork_url }}" href="{% url "track-edit" track_id=track.pk %}"><i class="icon-play-circle"></i> {{ track }}</a></td>
             <td>{{ track.artist }}</td>
             <td>{{ track.album }}</td>
             <td>{{ track.genre }}</td>
@@ -43,6 +24,30 @@
         {% endfor %}
     </tbody>
 </table>
+
+<div class="btn-group pull-left dropup">
+    <a class="btn dropdown-toggle disabled" data-toggle="dropdown" id="track-select" href="#">
+        Selected Tracks
+        <span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu">
+        <li><a class="playlist-create" href="{% url "playlist-create" %}"><i class="icon-list"></i> New Playlist</a>
+        {% if playlists %}
+        <li class="dropdown-submenu">
+            <a tabindex="-1" href="#"><i class="icon-plus-sign"></i> Add to Playlist</a>
+            <ul class="dropdown-menu">
+                {% for p in playlists %}
+                <li><a class="playlist-add" data-playlist="{{ p.pk }}" href="{% url "ajax-playlist-add" %}">{{ p }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+        {% else %}
+        <li class="disabled"><a href="#"><i class="icon-plus-sign"></i> Add to Playlist</a>
+        {% endif %}
+        <li class="divider"></li>
+        <li><a href=""><i class="icon-info-sign"></i> More Information</a>
+    </ul>
+</div>
 
 {% if page.paginator.num_pages > 1 %}
 <div class="pagination pagination-centered">

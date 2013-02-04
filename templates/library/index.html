@@ -4,7 +4,6 @@
 {% block js %}
 <script>
     var page_url = '{% url "ajax-page" %}';
-    var playlist_add_url = '{% url "ajax-playlist-add" %}';
 </script>
 <script src="{{ STATIC_URL }}js/library.js"></script>
 {% endblock %}
@@ -12,14 +11,14 @@
 {% block content %}
 <div class="row-fluid">
     <div class="span2">
-        <div class="player">
-            <img src="{{ STATIC_URL }}img/cover.png" alt="" class="span12" />
-            <audio id="player" controls></audio>
+        <div class="artwork">
+            <img src="{{ STATIC_URL }}img/cover.png" alt="" />
             <div class="overlay">
                 <div class="track">Now Playing</div>
                 <div class="artist">-</div>
             </div>
         </div>
+        <audio id="player" controls></audio>
         <ul class="nav nav-list">
             <li class="nav-header">Owner</li>
             {% for u in users %}
