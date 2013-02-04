@@ -77,6 +77,13 @@ def stats(request):
     })
 
 @login_required
+def artist(request, slug):
+    artist = get_object_or_404(Artist, slug=slug)
+    return render(request, 'library/artist.html', {
+        'artist': artist,
+    })
+
+@login_required
 def genre(request, slug):
     genre = get_object_or_404(Genre, slug=slug)
     return index(request, genre=genre)

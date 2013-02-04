@@ -44,6 +44,9 @@ class Album (MatchModel):
             #return artwork_storage.url(self.artwork_path)
         return '%simg/cover.png' % settings.STATIC_URL
 
+    def sorted_tracks(self):
+        return self.tracks.order_by('track_number', 'name')
+
 class Genre (MatchModel):
     pass
 

@@ -1,0 +1,66 @@
+{% extends "library/base.html" %}
+
+{% load bootstrap %}
+{% load track %}
+
+{% block css %}
+<style>
+    div.album { margin-bottom: 30px; }
+    div.album h3 { margin-top: 0px; }
+    td.track { width: 70%; }
+    td.number, td.length { width: 15%; }
+</style>
+{% endblock %}
+
+{% block js %}
+<script src="{{ STATIC_URL }}js/library.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span3">
+        <ul class="nav nav-list">
+            <li class="nav-header">Artist</li>
+            <li class="disabled"><a href="">{{ artist }}</a></li>
+            <li class="nav-header">MusicBrainz ID</li>
+            <li class="disabled"><a href="">{{ artist.musicbrainz_id }}</a></li>
+            <li class="divider"></li>
+            <li class="nav-header">Audio Player</li>
+            <li><audio id="player" controls></audio></li>
+        </ul>
+    </div>
+    <div class="span9">
+        {% for album in artist.albums.all %}
+        <div class="row-fluid album">
+            <div class="span2">
+                <img src="{{ album.artwork_url }}" alt="" />
+            </div>
+            <div class="span10">
+                <h3>{{ album }}</h3>
+                <blockquote><p>
+                    {% if album.num_tracks %}<strong>Tracks:</strong> {{ album.num_tracks }}<br />{% endif %}
+                    {% if album.release_date %}<strong>Released:</strong> {{ album.release_date }}<br />{% endif %}
+                    {% if album.musicbrainz_id %}<strong>MusicBrainz ID:</strong> {{ album.musicbrainz_id }}{% endif %}
+                </p></blockquote>
+                <table class="table table-striped">
+                    <thead><tr>
+                        <th>Track</th>
+                        <th>Number</th>
+                        <th>Length</th>
+                    </tr></thead>
+                    <tbody>
+                        {% for track in album.sorted_tracks %}
+                        <tr>
+                            <td class="track"><a class="play" data-track-id="{{ track.pk }}" data-track-url="{{ track.url }}" href="{% url "track-edit" track_id=track.pk %}"><i class="icon-play-circle"></i> {{ track }}</a></td>
+                            <td class="number">{{ track.track_number|default:"" }}</td>
+                            <td class="length">{{ track.length|track_length }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
