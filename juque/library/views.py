@@ -15,6 +15,7 @@ from bootstrap.utils import local_page_range
 from wsgiref.util import FileWrapper
 import collections
 import binascii
+import json
 import re
 
 range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
@@ -25,6 +26,30 @@ def ajax_play(request, track_id):
     track.play_history.create(user=request.user)
     Track.objects.filter(pk=track.pk).update(play_count=F('play_count') + 1)
     return HttpResponse('OK')
+
+@login_required
+def ajax_query(request):
+    query = request.GET.get('q', '').strip()
+    results = []
+    for artist in Artist.objects.filter(name__icontains=query).order_by('name')[:3]:
+        results.append({
+            'type': 'artist',
+            'name': artist.name,
+            'url': artist.get_absolute_url(),
+            'id': artist.pk,
+        })
+    q_obj = Q(name__icontains=query) | Q(artist__name__icontains=query) | Q(album__name__icontains=query)
+    for track in Track.objects.filter(q_obj).select_related('artist', 'album').order_by('name')[:5]:
+        results.append({
+            'type': 'track',
+            'name': track.name,
+            'artist': track.artist.name if track.artist else None,
+            'album': track.album.name if track.album else None,
+            'url': track.url(),
+            'artwork_url': track.artwork_url(),
+            'id': track.pk,
+        })
+    return HttpResponse(json.dumps(results, indent=4), content_type='application/json')
 
 @login_required
 def ajax_page(request):

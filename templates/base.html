@@ -63,6 +63,7 @@
         {% compress js %}
         <script>
             var initial_field = '{% block initial-field %}q{% endblock %}';
+            var query_url = '{% url "ajax-query" %}';
         </script>
         <script src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
         <script src="{{ STATIC_URL }}chosen/chosen.jquery.min.js"></script>

@@ -30,7 +30,9 @@ class MatchModel (models.Model):
         super(MatchModel, self).save(**kwargs)
 
 class Artist (MatchModel):
-    pass
+    @models.permalink
+    def get_absolute_url(self):
+        return ('library-artist', (), {'slug': self.slug})
 
 class Album (MatchModel):
     artist = models.ForeignKey(Artist, related_name='albums', null=True, blank=True)
@@ -82,6 +84,11 @@ class Track (MatchModel):
         else:
             ext = os.path.splitext(self.file_path)[1][1:]
             return reverse('track-stream', kwargs={'track_id': self.pk, 'extension': ext})
+
+    def artwork_url(self):
+        if self.album:
+            return self.album.artwork_url()
+        return '%simg/cover.png' % settings.STATIC_URL
 
 class PlayHistory (models.Model):
     track = models.ForeignKey(Track, related_name='play_history')
