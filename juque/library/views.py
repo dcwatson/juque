@@ -8,7 +8,7 @@ from django.db.models import Q, Count, Sum, F
 from django.db import connections
 from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
-from juque.library.forms import TrackForm
+from juque.library.forms import TrackForm, common_form_factory
 from juque.library.utils import RangeFileWrapper, render_thumbnail
 from juque.playlists.models import Playlist
 from bootstrap.utils import local_page_range
@@ -249,11 +249,35 @@ def track_stream(request, track_id, extension):
     resp['Accept-Ranges'] = 'bytes'
     return resp
 
+@login_required
 def track_edit(request, track_id):
     track = get_object_or_404(Track.objects.select_related('artist', 'album', 'genre'), pk=track_id)
     return render(request, 'library/track_edit.html', {
         'track': track,
         'form': TrackForm(instance=track),
+    })
+
+@login_required
+def track_multi_edit(request):
+    fields = (
+        ('name', 'Track Name'),
+        ('artist__name', 'Artist'),
+        ('album__name', 'Album'),
+        ('album__release_date', 'Release Date'),
+        ('genre__name', 'Genre'),
+    )
+    tracks = Track.objects.filter(pk__in=request.REQUEST.getlist('t'))
+    form_class = common_form_factory(tracks, fields)
+    if request.method == 'POST':
+        form = form_class(request.POST)
+        if form.is_valid():
+            form.save(commit=False)
+            return HttpResponse('OK')
+    else:
+        form = form_class()
+    return render(request, 'library/track_multi.html', {
+        'form': form,
+        'tracks': tracks,
     })
 
 def track_play(request, track_id):

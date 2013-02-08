@@ -1,4 +1,7 @@
+var last_query = {};
+
 function load_page(query) {
+    query = query || last_query;
     $.ajax({
         url: page_url,
         data: query || {},
@@ -6,6 +9,7 @@ function load_page(query) {
         success: function(html) {
             $('#page').empty().append(html);
             $('#q').val(query.q || '');
+            last_query = query;
         }
     });
 }
@@ -109,6 +113,37 @@ $(function() {
             rows.removeClass('info');
             btn.addClass('disabled');
         }
+    });
+
+    $('body').on('click', 'a.track-edit', function(e) {
+        var track_ids = [];
+        $('input.track-select:checked').each(function(idx, elem) {
+            track_ids.push($(elem).val());
+        });
+        $.ajax({
+            url: $(this).attr('href'),
+            data: {t: track_ids},
+            traditional: true,
+            dataType: 'html',
+            success: function(html) {
+                $('#modal').empty().append(html).modal();
+            }
+        });
+        return false;
+    });
+
+    $('body').on('click', 'a.track-save', function(e) {
+        var form = $('form.track-form');
+        console.log(form.serialize());
+        $.ajax({
+            url: form.attr('action'),
+            type: 'POST',
+            data: form.serialize(),
+            success: function(html) {
+                console.log(html);
+            }
+        });
+        return false;
     });
 
     $('#search-form').submit(function() {

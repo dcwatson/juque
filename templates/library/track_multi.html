@@ -1,0 +1,31 @@
+<div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal">&times;</button>
+    <h3>Edit Track Information</h3>
+</div>
+<div class="modal-body">
+    <form class="track-form" action="{% url "track-multi-edit" %}" method="post">
+        <div class="row-fluid">
+            <div class="span5">
+                <ul>
+                {% for track in tracks %}
+                    <input type="hidden" name="t" value="{{ track.pk }}" />
+                    <li>{{ track }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+            <div class="span7">
+                {% for field in form %}
+                    {{ field.label_tag }}
+                    {{ field }}
+                    {% for val in field.field.choices %}
+                        {{ val }}{% if not forloop.last %}, {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn" data-dismiss="modal">Close</button>
+    <a href="#" class="btn btn-primary track-save">Save changes</a>
+</div>

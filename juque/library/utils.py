@@ -3,6 +3,7 @@ from django.core.files.base import File, ContentFile
 from django.core.files.storage import get_storage_class
 from django.core.cache import cache
 from django.utils.text import slugify as django_slugify
+from django import forms
 from juque.core.models import User
 from juque.lastfm import get_album_info, get_album_artwork, get_track_info
 from mutagen import id3, mp4, File as scan_file
