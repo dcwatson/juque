@@ -179,7 +179,7 @@ def cleanup_albums(request):
     dupes = []
     for row in cursor.fetchall():
         artist = Artist.objects.get(pk=row[0])
-        albums = Album.objects.filter(artist=artist, match_name=row[1]).annotate(num_tracks=Count('tracks')).order_by('-num_tracks')
+        albums = Album.objects.filter(artist=artist, match_name=row[1]).annotate(num_tracks_local=Count('tracks')).order_by('-num_tracks_local')
         dupes.append({
             'artist': artist,
             'albums': albums,

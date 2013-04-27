@@ -1,0 +1,7 @@
+{% autoescape off %}
+#EXTM3U
+{% for t in playlist.get_tracks %}
+#EXTINF:{{ t.length }},{{ t.artist }} - {{ t }}
+{{ t.url }}
+{% endfor %}
+{% endautoescape %}

@@ -41,6 +41,15 @@ def playlist_edit(request, playlist_id):
     return playlist_form(request, playlist)
 
 @login_required
+def playlist_download(request, playlist_id):
+    playlist = get_object_or_404(Playlist, pk=playlist_id)
+    response = render(request, 'playlists/playlist.m3u', {
+        'playlist': playlist,
+    }, content_type='audio/x-mpegurl')
+    response['Content-disposition'] = 'inline; filename="%s.m3u"' % playlist.name
+    return response
+
+@login_required
 def ajax_tracks(request):
     q = request.GET.get('q', '').strip()
     try:

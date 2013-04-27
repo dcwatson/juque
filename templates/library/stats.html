@@ -41,7 +41,7 @@
                         <tr>
                             <td>{{ t }}</td>
                             <td>{{ t.artist }}</td>
-                            <td>{{ t.date_added.date }}</td>
+                            <td class="nowrap">{{ t.date_added.date }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -57,7 +57,7 @@
                     <tbody>
                         {% for a in artists %}
                         <tr>
-                            <td>{{ a }}</td>
+                            <td>{% if a.slug %}<a href="{% url "library-artist" slug=a.slug %}">{{ a }}</a>{% else %}{{ a }}{% endif %}</td>
                             <td>{{ a.num_tracks }}</td>
                         </tr>
                         {% endfor %}

@@ -61,6 +61,7 @@
         <div class="form-actions">
             <button type="submit" class="btn btn-primary">Save Playlist</button>
             <button type="button" class="btn">Cancel</button>
+            <a class="pull-right btn" href="{% url "playlist-download" playlist_id=playlist.pk %}"><i class="icon-download"></i> Download Playlist</a>
         </div>
     </form>
 </div>
