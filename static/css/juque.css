@@ -46,3 +46,10 @@ input.track-select, input.select-all { position: relative; top: -3px; }
 span.query-track { display: block; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
 span.query-track-artist { font-size: 90%; display: block; overflow: hidden; text-overflow: ellipsis; }
 span.query-artist { display: block; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
+
+.typeahead a em { font-style: normal; background-color: #ffa; }
+.typeahead .active > a em,
+.typeahead .active > a:hover em {
+    background-color: transparent;
+    text-decoration: underline;
+}

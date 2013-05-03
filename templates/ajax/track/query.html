@@ -1,0 +1,14 @@
+{% load highlight %}
+
+<span class="query-track">{{ object.name|highlight:query }}</span>
+{% if object.artist or object.album %}
+    <span class="query-track-artist">
+    {% if object.artist %}
+        {{ object.artist.name|highlight:query }}
+        {% if object.album %}&mdash;{% endif %}
+    {% endif %}
+    {% if object.album %}
+        {{ object.album.name|highlight:query }}
+    {% endif %}
+    </span>
+{% endif %}

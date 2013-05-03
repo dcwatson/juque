@@ -9,7 +9,7 @@ from django.db import connections
 from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
 from juque.library.forms import TrackForm, common_form_factory
-from juque.library.utils import RangeFileWrapper, render_thumbnail
+from juque.library.utils import RangeFileWrapper, render_thumbnail, get_query_html
 from juque.playlists.models import Playlist
 from bootstrap.utils import local_page_range
 from wsgiref.util import FileWrapper
@@ -37,6 +37,7 @@ def ajax_query(request):
             'name': artist.name,
             'url': artist.get_absolute_url(),
             'id': artist.pk,
+            'html': get_query_html(artist, query),
         })
     q_obj = Q(name__icontains=query) | Q(artist__name__icontains=query) | Q(album__name__icontains=query)
     for track in Track.objects.filter(q_obj).select_related('artist', 'album').order_by('name')[:5]:
@@ -48,6 +49,7 @@ def ajax_query(request):
             'url': track.url(),
             'artwork_url': track.artwork_url(),
             'id': track.pk,
+            'html': get_query_html(track, query),
         })
     return HttpResponse(json.dumps(results, indent=4), content_type='application/json')
 

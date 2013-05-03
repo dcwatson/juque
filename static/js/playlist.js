@@ -34,18 +34,7 @@ $(function() {
             return '';
         },
         highlighter: function(item) {
-            var html = '<span class="track">' + item.track + '</span>';
-            var line = [];
-            if(item.artist) {
-                line.push(item.artist);
-            }
-            if(item.album) {
-                line.push(item.album);
-            }
-            if(line) {
-                html += '<span class="artist">' + line.join(' &mdash; ') + '</span>';
-            }
-            return html;
+            return item.html;
         }
     });
     $('#tracks').sortable({

@@ -3,6 +3,7 @@ from django.core.files.base import File, ContentFile
 from django.core.files.storage import get_storage_class
 from django.core.cache import cache
 from django.utils.text import slugify as django_slugify
+from django.template import loader
 from django import forms
 from juque.core.models import User
 from juque.lastfm import get_album_info, get_album_artwork, get_track_info
@@ -291,3 +292,7 @@ def render_thumbnail(album):
     data = data.getvalue()
     cache.set(cache_key, data, 60 * 60 * 24 * 7)
     return data
+
+def get_query_html(obj, q=None):
+    template_name = 'ajax/%s/query.html' % obj.__class__.__name__.lower()
+    return loader.render_to_string(template_name, {'object': obj, 'query': q})

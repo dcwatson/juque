@@ -5,6 +5,7 @@ from django.contrib.auth.decorators import login_required
 from juque.playlists.models import Playlist
 from juque.library.models import Track
 from juque.library.templatetags.track import track_length
+from juque.library.utils import get_query_html
 import json
 
 @login_required
@@ -65,6 +66,7 @@ def ajax_tracks(request):
             'artist': t.artist.name if t.artist else None,
             'album': t.album.name if t.album else None,
             'length': track_length(t.length),
+            'html': get_query_html(t, q),
         })
     return HttpResponse(json.dumps(info), content_type='application/json')
 

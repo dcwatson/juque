@@ -17,7 +17,11 @@ $(function() {
                 data: {q: query},
                 dataType: 'json',
                 success: function(data) {
-                    data.unshift({type: 'query', query: query});
+                    data.unshift({
+                        type: 'query',
+                        query: query,
+                        html: '<span class="query"><i class="icon-search"></i> ' + query + '</span>'
+                    });
                     // A dirty hack to make sure our updater method gets an object instead of the string "[Object]"
                     $.each(data, function(idx, item) {
                         item.toString = function() { return JSON.stringify(item); };
@@ -59,27 +63,7 @@ $(function() {
             return '';
         },
         highlighter: function(item) {
-            var html = '';
-            if(item.type == 'track') {
-                var line = [];
-                html += '<span class="query-track">' + item.name + '</span>';
-                if(item.artist) {
-                    line.push(item.artist);
-                }
-                if(item.album) {
-                    line.push(item.album);
-                }
-                if(line) {
-                    html += '<span class="query-track-artist">' + line.join(' &mdash; ') + '</span>';
-                }
-            }
-            else if(item.type == 'artist') {
-                html += '<span class="query-artist"><i class="icon-user"></i> ' + item.name + '</span>';
-            }
-            else if(item.type == 'query') {
-                html += '<span class="query"><i class="icon-search"></i> ' + item.query + '</span>';
-            }
-            return html;
+            return item.html;
         }
     });
 });
