@@ -42,6 +42,8 @@ TAG_MAPPERS = {
         'TDRC': 'date',
         'TDOR': 'originaldate',
         'TRCK': 'track',
+        'USLT': 'lyrics',
+        'COMM': 'notes',
     },
     mp4.MP4Tags: {
         '\xa9ART': 'artist',
@@ -52,6 +54,7 @@ TAG_MAPPERS = {
         '\xa9day': 'date',
         '\xa9gen': 'genre',
         '\xa9lyr': 'lyrics',
+        '\xa9cmt': 'notes',
         'trkn': 'track',
     }
 }
@@ -104,18 +107,28 @@ def retag_track(track):
             tags[tag] = track.genre.name
     tags.save(track.file_path)
 
-def update_track(track, update_artist=True, update_album=True):
-    info = get_track_info(track.artist.name, track.name)
-    if update_artist and 'artist' in info:
-        if 'name' in info['artist']:
-            track.artist.name = info['artist']['name'].strip()
-        if 'mbid' in info['artist']:
-            track.artist.musicbrainz_id = info['artist']['mbid'].strip()
+def update_track(track, autocorrect=True, update_artist=True, update_album=True):
+    info = get_track_info(track.artist_name, track.name, autocorrect=autocorrect)
+    if autocorrect:
+        if 'artist' in info and 'name' in info['artist']:
+            track.artist_name = info['artist']['name'].strip()
+        if 'album' in info and 'title' in info['album']:
+            track.album_name = info['album']['title'].strip()
+        if 'name' in info:
+            track.name = info['name'].strip()
+    if 'mbid' in info:
+        track.musicbrainz_id = info['mbid'].strip()
+    if 'album' in info and '@attr' in info['album'] and 'position' in info['album']['@attr']:
+        try:
+            track.track_number = int(info['album']['@attr']['position'])
+        except:
+            pass
+    # We need to call save() so the related Artist and Album objects are created/updated as needed.
+    track.save()
+    if update_artist and 'artist' in info and 'mbid' in info['artist']:
+        track.artist.musicbrainz_id = info['artist']['mbid'].strip()
         track.artist.save()
-    if update_album and 'album' in info and 'title' in info['album']:
-        if not track.album:
-            track.album = track.artist.albums.create()
-        track.album.name = info['album']['title'].strip()
+    if update_album and 'album' in info:
         if 'mbid' in info['album']:
             track.album.musicbrainz_id = info['album']['mbid'].strip()
         if not track.album.artwork_path and 'image' in info['album']:
@@ -127,7 +140,7 @@ def update_track(track, update_artist=True, update_album=True):
                 try:
                     r = requests.get(image_urls[s])
                     mime = r.headers['Content-Type'].split(';')[0]
-                    logger.debug('Downloaded %s for %s', image_urls[s], track.album.name)
+                    logger.debug('Downloaded %s for %s', image_urls[s], track.album_name)
                     ext = mimetypes.guess_extension(mime)
                     # What a ridiculous default extension for image/jpeg.
                     if ext == '.jpe':
@@ -141,19 +154,9 @@ def update_track(track, update_artist=True, update_album=True):
                 except:
                     pass
         track.album.save()
-    if 'name' in info:
-        track.name = info['name'].strip()
-    if 'mbid' in info:
-        track.musicbrainz_id = info['mbid'].strip()
-    if 'album' in info and '@attr' in info['album'] and 'position' in info['album']['@attr']:
-        try:
-            track.track_number = int(info['album']['@attr']['position'])
-        except:
-            pass
-    track.save()
 
 def create_track(file_path, owner, copy=None):
-    from juque.library.models import Track, Artist, Album, Genre
+    from juque.library.models import Track
     if copy is None:
         copy = settings.JUQUE_COPY_SOURCE
     file_size = os.path.getsize(file_path)
@@ -162,67 +165,42 @@ def create_track(file_path, owner, copy=None):
         logger.warning('No tags found in %s; Skipping.', file_path)
         return
     tags = map_tags(meta.tags)
-    try:
-        title = tags['title']
-    except:
-        title = os.path.basename(file_path)
-    artist = None
-    album = None
-    genre = None
-    track = 0
-    if 'artist' in tags:
-        artist_name = tags['artist']
-        try:
-            artist = Artist.objects.get(slug=slugify(artist_name))
-        except:
-            artist = Artist.objects.create(name=artist_name)
-    if 'album' in tags:
-        album_name = tags['album']
-        try:
-            # Make sure we don't grab a "bare" album (without an artist), since they are essentially
-            # one-offs for tracks not specifying an artist. Just because the names may match, doesn't mean
-            # the tracks are off the same album unless the artist matches too.
-            album = Album.objects.get(artist=artist, artist__isnull=False, slug=slugify(album_name))
-        except:
-            album = Album.objects.create(name=album_name, artist=artist)
-    if 'genre' in tags:
-        genre_name = tags['genre']
-        try:
-            genre = Genre.objects.get(slug=slugify(genre_name))
-        except:
-            genre = Genre.objects.create(name=genre_name)
+    # Sometimes the track number is a number, sometimes it's a string like "2 / 13"
+    track_number = 0
     if 'track' in tags:
         if tags['track'].isdigit():
-            track = int(tags['track'])
+            track_number = int(tags['track'])
         elif '/' in tags['track']:
             try:
-                track = int(tags['track'].split('/')[0])
+                track_number = int(tags['track'].split('/')[0])
             except:
                 pass
-    t = Track.objects.create(
+    track = Track.objects.create(
         owner=owner,
-        name=title,
+        name=tags.get('title', os.path.basename(file_path)),
         length=meta.info.length,
         bitrate=meta.info.bitrate,
         sample_rate=meta.info.sample_rate,
-        artist=artist,
-        album=album,
-        genre=genre,
-        track_number=track,
+        artist_name=tags.get('artist', '').strip(),
+        album_name=tags.get('album', '').strip(),
+        genre_name=tags.get('genre', '').strip(),
+        lyrics=tags.get('lyrics', '').strip(),
+        notes=tags.get('notes', '').strip(),
+        track_number=track_number,
         file_path=file_path,
         file_size=file_size,
         file_managed=copy,
         file_type=meta.mime[0],
     )
     if copy:
-        ext = os.path.splitext(t.file_path)[1]
-        new_path = 'tracks/%s%s' % (t.pk, ext)
+        ext = os.path.splitext(track.file_path)[1]
+        new_path = 'tracks/%s%s' % (track.pk, ext)
         with open(file_path, 'rb') as f:
-            t.file_path = library_storage.save(new_path, File(f))
-        t.save()
-    if settings.LASTFM_ENABLE and artist:
-        update_track(t)
-    return t
+            track.file_path = library_storage.save(new_path, File(f))
+        track.save()
+    if settings.LASTFM_ENABLE and track.artist:
+        update_track(track)
+    return track
 
 def scan_directory(dir_path, owner=None):
     if owner is None:

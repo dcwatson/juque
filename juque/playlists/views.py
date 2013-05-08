@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.db.models import Q
 from django.contrib.auth.decorators import login_required
 from juque.playlists.models import Playlist
@@ -42,12 +42,18 @@ def playlist_edit(request, playlist_id):
     return playlist_form(request, playlist)
 
 @login_required
-def playlist_download(request, playlist_id):
+def playlist_download(request, playlist_id, file_format):
     playlist = get_object_or_404(Playlist, pk=playlist_id)
-    response = render(request, 'playlists/playlist.m3u', {
+    if file_format not in ('pls', 'm3u'):
+        raise Http404()
+    mime_type = {
+        'pls': 'audio/x-scpls',
+        'm3u': 'audio/x-mpegurl',
+    }[file_format]
+    response = render(request, 'playlists/playlist.%s' % file_format, {
         'playlist': playlist,
-    }, content_type='audio/x-mpegurl')
-    response['Content-disposition'] = 'inline; filename="%s.m3u"' % playlist.name
+    }, content_type=mime_type)
+    response['Content-disposition'] = 'inline; filename="%s.%s"' % (playlist.name, file_format)
     return response
 
 @login_required

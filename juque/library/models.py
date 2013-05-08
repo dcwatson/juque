@@ -3,9 +3,12 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from juque.core.models import User
-from juque.library.utils import slugify, library_storage, artwork_storage
+from juque.library.utils import slugify, library_storage, artwork_storage, update_track
+import logging
 import os
 import re
+
+logger = logging.getLogger(__name__)
 
 FILE_TYPE_CHOICES = (
     ('audio/mp3', 'MP3'),
@@ -13,7 +16,7 @@ FILE_TYPE_CHOICES = (
 )
 
 class MatchModel (models.Model):
-    name = models.CharField(max_length=200)
+    name = models.CharField(max_length=200, db_index=True)
     slug = models.CharField(max_length=200, db_index=True, editable=False)
     match_name = models.CharField(max_length=200, db_index=True, editable=False)
     musicbrainz_id = models.CharField(max_length=40, db_index=True, blank=True)
@@ -59,10 +62,16 @@ class Track (MatchModel):
     bitrate = models.IntegerField(editable=False)
     sample_rate = models.IntegerField(editable=False)
     # Tagging
+    artist_name = models.CharField(max_length=200, blank=True)
+    album_name = models.CharField(max_length=200, blank=True)
+    genre_name = models.CharField(max_length=200, blank=True)
+    track_number = models.IntegerField(default=0)
+    lyrics = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
+    # Relations
     artist = models.ForeignKey(Artist, related_name='tracks', null=True, blank=True)
     album = models.ForeignKey(Album, related_name='tracks', null=True, blank=True)
     genre = models.ForeignKey(Genre, related_name='tracks', null=True, blank=True)
-    track_number = models.IntegerField(default=0)
     # File information
     file_path = models.TextField(editable=False)
     file_size = models.IntegerField(editable=False)
@@ -75,6 +84,24 @@ class Track (MatchModel):
     play_count = models.IntegerField(default=0, editable=False)
 
     def save(self, **kwargs):
+        if self.artist_name:
+            self.artist, created = Artist.objects.get_or_create(slug=slugify(self.artist_name), defaults={'name': self.artist_name})
+            if created:
+                logger.debug('Created new Artist: %s', self.artist)
+        else:
+            self.artist = None
+        if self.album_name:
+            self.album, created = Album.objects.get_or_create(artist=self.artist, slug=slugify(self.album_name), defaults={'name': self.album_name})
+            if created:
+                logger.debug('Created new Album: %s', self.album)
+        else:
+            self.album = None
+        if self.genre_name:
+            self.genre, created = Genre.objects.get_or_create(slug=slugify(self.genre_name), defaults={'name': self.genre_name})
+            if created:
+                logger.debug('Created new Genre: %s', self.genre)
+        else:
+            self.genre = None
         self.date_modified = timezone.now()
         super(Track, self).save(**kwargs)
 

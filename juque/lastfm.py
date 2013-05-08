@@ -50,12 +50,12 @@ def get_album_artwork(artist_name, album_name):
         except:
             pass
 
-def get_track_info(artist_name, track_name):
+def get_track_info(artist_name, track_name, autocorrect=False):
     return api_call({
         'api_key': settings.LASTFM_API_KEY,
         'method': 'track.getinfo',
         'artist': artist_name,
         'track': track_name,
-        'autocorrect': '1',
+        'autocorrect': '1' if autocorrect else '0',
         'format': 'json',
     })['track']

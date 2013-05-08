@@ -21,10 +21,10 @@ import re
 range_re = re.compile(r'bytes\s*=\s*(\d+)\s*-\s*(\d*)', re.I)
 
 EDIT_FIELDS = (
-    ('name', 'Track Name', Track),
-    ('artist__name', 'Artist', Artist),
-    ('album__name', 'Album', Album),
-    ('genre__name', 'Genre', Genre),
+    ('artist_name', 'Artist'),
+    ('album_name', 'Album'),
+    ('genre_name', 'Genre'),
+    ('notes', 'Notes'),
 )
 
 @login_required
@@ -97,12 +97,8 @@ def ajax_page(request):
 def ajax_autocomplete(request):
     query = request.GET.get('q', '').strip()
     field = request.GET.get('f', '').strip()
-    values = []
-    for field_path, field_label, model_class in EDIT_FIELDS:
-        if field_path == field:
-            field_name = str(field_path.split('__')[-1])
-            q = {'%s__icontains' % field_name: query}
-            values = list(model_class.objects.values_list(field_name, flat=True).distinct().filter(**q).order_by(field_name))
+    q = {'%s__icontains' % str(field): query}
+    values = list(Track.objects.values_list(field, flat=True).distinct().filter(**q).order_by(field))
     return HttpResponse(json.dumps(values), content_type='applcation/json')
 
 @login_required
@@ -281,7 +277,7 @@ def track_edit(request, track_id):
 @login_required
 def track_multi_edit(request):
     tracks = Track.objects.filter(pk__in=request.REQUEST.getlist('t'))
-    form_class = common_form_factory(tracks, EDIT_FIELDS)
+    form_class = common_form_factory(tracks, EDIT_FIELDS, autocomplete=('artist_name', 'album_name', 'genre_name'))
     if request.method == 'POST':
         form = form_class(request.POST)
         if form.is_valid():

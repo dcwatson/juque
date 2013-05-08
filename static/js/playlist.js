@@ -1,6 +1,6 @@
 $(function() {
     $('#search').typeahead({
-        minLength: 3,
+        minLength: 2,
         items: 8,
         source: function(query, process) {
             $.ajax({
