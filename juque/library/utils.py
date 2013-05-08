@@ -12,6 +12,7 @@ from PIL import Image
 from StringIO import StringIO
 import mimetypes
 import datetime
+import requests
 import logging
 import re
 import os
@@ -103,58 +104,52 @@ def retag_track(track):
             tags[tag] = track.genre.name
     tags.save(track.file_path)
 
-def update_album(album, update_artist=True, update_tracks=True, update_artwork=True):
-    info = get_album_info(album.artist.name, album.name)
-    if update_artist:
-        album.artist.name = info['artist'].strip()
-        try:
-            album.artist.musicbrainz_id = info['tracks']['track'][0]['artist']['mbid']
-        except:
-            pass
-        album.artist.save()
-    if update_tracks and isinstance(info['tracks'], (list, tuple)):
-        for t in info['tracks']['track']:
-            match = slugify(t['name'], strip_words=True)
-            try:
-                track = album.tracks.get(match_name=match)
-                track.name = t['name'].strip()
-                track.track_number = int(t['@attr']['rank'])
-                track.musicbrainz_id = t['mbid'].strip()
-                track.save()
-            except:
-                pass
-    album.name = info['name'].strip()
-    album.musicbrainz_id = info['mbid'].strip()
-    if isinstance(info['tracks'], (list, tuple)):
-        album.num_tracks = len(info['tracks']['track'])
-    try:
-        s = info['releasedate'].strip().split(',')[0]
-        album.release_date = datetime.datetime.strptime(s, '%d %b %Y').date()
-    except:
-        pass
-    if update_artwork and not album.artwork_path:
-        try:
-            mime, data = get_album_artwork(album.artist.name, album.name)
-            ext = mimetypes.guess_extension(mime)
-            # What a ridiculous default extension for image/jpeg.
-            if ext == '.jpe':
-                ext = '.jpg'
-            path = 'album-art/%s%s' % (album.pk, ext)
-            if artwork_storage.exists(path):
-                artwork_storage.delete(path)
-            album.artwork_path = artwork_storage.save(path, ContentFile(data))
-        except:
-            pass
-    album.save()
-
-def update_track(track, update_artist=True):
+def update_track(track, update_artist=True, update_album=True):
     info = get_track_info(track.artist.name, track.name)
-    if update_artist:
-        track.artist.name = info['artist']['name'].strip()
-        track.artist.musicbrainz_id = info['artist']['mbid'].strip()
+    if update_artist and 'artist' in info:
+        if 'name' in info['artist']:
+            track.artist.name = info['artist']['name'].strip()
+        if 'mbid' in info['artist']:
+            track.artist.musicbrainz_id = info['artist']['mbid'].strip()
         track.artist.save()
-    track.name = info['name'].strip()
-    track.musicbrainz_id = info['mbid'].strip()
+    if update_album and 'album' in info and 'title' in info['album']:
+        if not track.album:
+            track.album = track.artist.albums.create()
+        track.album.name = info['album']['title'].strip()
+        if 'mbid' in info['album']:
+            track.album.musicbrainz_id = info['album']['mbid'].strip()
+        if not track.album.artwork_path and 'image' in info['album']:
+            image_urls = {}
+            for i in info['album']['image']:
+                image_urls[i['size']] = i['#text']
+            # Try to get the largest album artwork we can.
+            for s in ('mega', 'extralarge', 'large', 'medium', 'small'):
+                try:
+                    r = requests.get(image_urls[s])
+                    mime = r.headers['Content-Type'].split(';')[0]
+                    logger.debug('Downloaded %s for %s', image_urls[s], track.album.name)
+                    ext = mimetypes.guess_extension(mime)
+                    # What a ridiculous default extension for image/jpeg.
+                    if ext == '.jpe':
+                        ext = '.jpg'
+                    path = 'album-art/%s%s' % (track.album.pk, ext)
+                    if artwork_storage.exists(path):
+                        artwork_storage.delete(path)
+                        logger.debug('Deleted existing artwork at %s', path)
+                    track.album.artwork_path = artwork_storage.save(path, ContentFile(r.content))
+                    break
+                except:
+                    pass
+        track.album.save()
+    if 'name' in info:
+        track.name = info['name'].strip()
+    if 'mbid' in info:
+        track.musicbrainz_id = info['mbid'].strip()
+    if 'album' in info and '@attr' in info['album'] and 'position' in info['album']['@attr']:
+        try:
+            track.track_number = int(info['album']['@attr']['position'])
+        except:
+            pass
     track.save()
 
 def create_track(file_path, owner, copy=None):
@@ -225,6 +220,8 @@ def create_track(file_path, owner, copy=None):
         with open(file_path, 'rb') as f:
             t.file_path = library_storage.save(new_path, File(f))
         t.save()
+    if settings.LASTFM_ENABLE and artist:
+        update_track(t)
     return t
 
 def scan_directory(dir_path, owner=None):

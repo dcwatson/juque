@@ -1,16 +1,14 @@
 from django.conf import settings
 from django.core.cache import cache, CacheKeyWarning
-import warnings
 import requests
+import hashlib
 import time
-
-warnings.simplefilter('ignore', CacheKeyWarning)
 
 def cache_key(params):
     parts = []
     for key in sorted(params):
         parts.append('%s=%s' % (key, params[key]))
-    return ';'.join(parts)
+    return hashlib.md5(';'.join(parts)).hexdigest()
 
 def api_call(params):
     key = cache_key(params)
