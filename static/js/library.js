@@ -127,6 +127,23 @@ $(function() {
             dataType: 'html',
             success: function(html) {
                 $('#modal').empty().append(html).modal();
+                $('input.track-typeahead').typeahead({
+                    source: function(query, process) {
+                        var url = this.$element.data('typeahead-url');
+                        var field = this.$element.attr('name');
+                        $.ajax({
+                            url: url,
+                            data: {
+                                q: query,
+                                f: field
+                            },
+                            dataType: 'json',
+                            success: function(data) {
+                                process(data);
+                            }
+                        });
+                    }
+                });
             }
         });
         return false;
@@ -134,13 +151,13 @@ $(function() {
 
     $('body').on('click', 'a.track-save', function(e) {
         var form = $('form.track-form');
-        console.log(form.serialize());
         $.ajax({
             url: form.attr('action'),
             type: 'POST',
             data: form.serialize(),
             success: function(html) {
-                console.log(html);
+                $('#modal').modal('hide');
+                load_page();
             }
         });
         return false;

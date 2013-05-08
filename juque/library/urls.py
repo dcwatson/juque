@@ -17,4 +17,5 @@ urlpatterns = patterns('juque.library.views',
     url(r'^ajax/page/$', 'ajax_page', name='ajax-page'),
     url(r'^ajax/play/(?P<track_id>\d+)/$', 'ajax_play', name='ajax-play'),
     url(r'^ajax/query/$', 'ajax_query', name='ajax-query'),
+    url(r'^ajax/autocomplete/$', 'ajax_autocomplete', name='ajax-autocomplete'),
 )

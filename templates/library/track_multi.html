@@ -8,8 +8,7 @@
             <div class="span5">
                 <ul>
                 {% for track in tracks %}
-                    <input type="hidden" name="t" value="{{ track.pk }}" />
-                    <li>{{ track }}</li>
+                <li>{{ track }} <input type="hidden" name="t" value="{{ track.pk }}" /></li>
                 {% endfor %}
                 </ul>
             </div>
@@ -17,9 +16,6 @@
                 {% for field in form %}
                     {{ field.label_tag }}
                     {{ field }}
-                    {% for val in field.field.choices %}
-                        {{ val }}{% if not forloop.last %}, {% endif %}
-                    {% endfor %}
                 {% endfor %}
             </div>
         </div>
