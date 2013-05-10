@@ -69,7 +69,7 @@ def ajax_page(request):
         page_num = int(request.GET['p'])
     except:
         page_num = 1
-    qs = Track.objects.select_related('artist', 'album').order_by('artist__name', 'album__name', 'name')
+    qs = Track.objects.select_related('artist', 'album').order_by('artist_name', 'album_name', 'name')
     if genre_id:
         qs = qs.filter(genre__pk=genre_id)
     if user_id:

@@ -50,7 +50,7 @@
 </div>
 
 {% if page.paginator.num_pages > 1 %}
-<div class="pagination pagination-centered">
+<div class="pagination pagination-right">
     <ul>
         {% if page.has_previous %}
         <li><a class="filter" href="#page-{{ page.previous_page_number }}" data-query='{"p": {{ page.previous_page_number }}, "q": "{{ query.q }}", "u": "{{ query.u }}", "g": "{{ query.g }}"}'>&laquo;</a></li>

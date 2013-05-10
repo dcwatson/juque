@@ -138,25 +138,12 @@ COMPRESS_ENABLED = True
 JUQUE_SCAN_EXTENSIONS = ('mp3', 'm4a', 'mp4')
 JUQUE_COPY_SOURCE = True
 JUQUE_FFMPEG_BINARY = '/usr/bin/ffmpeg'
-
-JUQUE_STORAGES = {
-    'library': {
-        'backend': 'storages.backends.s3boto.S3BotoStorage',
-        'options': {
-            'bucket': '',
-            'access_key': '',
-            'secret_key': '',
-            'acl': 'private',
-            'secure_urls': False,
-        }
+JUQUE_STORAGE = {
+    'backend': 'django.core.files.storage.FileSystemStorage',
+    'options': {
+        'location': MEDIA_ROOT,
+        'base_url': MEDIA_URL,
     },
-    'artwork': {
-        'backend': 'django.core.files.storage.FileSystemStorage',
-        'options': {
-            'location': MEDIA_ROOT,
-            'base_url': MEDIA_URL,
-        }
-    }
 }
 
 LASTFM_ENABLE = False

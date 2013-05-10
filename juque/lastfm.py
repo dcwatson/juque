@@ -7,8 +7,9 @@ import time
 def cache_key(params):
     parts = []
     for key in sorted(params):
-        parts.append('%s=%s' % (key, params[key]))
-    return hashlib.md5(';'.join(parts)).hexdigest()
+        parts.append(u'%s=%s' % (key, params[key]))
+    s = u';'.join(parts).encode('utf-8')
+    return hashlib.md5(s).hexdigest()
 
 def api_call(params):
     key = cache_key(params)
@@ -26,13 +27,13 @@ def api_call(params):
         cache.set(key, info, settings.LASTFM_CACHE_TIME)
     return info
 
-def get_album_info(artist_name, album_name):
+def get_album_info(artist_name, album_name, autocorrect=False):
     return api_call({
         'api_key': settings.LASTFM_API_KEY,
         'method': 'album.getinfo',
         'artist': artist_name,
         'album': album_name,
-        'autocorrect': '1',
+        'autocorrect': '1' if autocorrect else '0',
         'format': 'json',
     })['album']
 

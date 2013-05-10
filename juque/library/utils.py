@@ -19,13 +19,8 @@ import os
 
 logger = logging.getLogger(__name__)
 
-# Build artwork storage backend.
-artwork_storage_cls = get_storage_class(settings.JUQUE_STORAGES['artwork']['backend'])
-artwork_storage = artwork_storage_cls(**settings.JUQUE_STORAGES['artwork']['options'])
-
 # Build library storage backend.
-library_storage_cls = get_storage_class(settings.JUQUE_STORAGES['library']['backend'])
-library_storage = library_storage_cls(**settings.JUQUE_STORAGES['library']['options'])
+library_storage = get_storage_class(settings.JUQUE_STORAGE['backend'])(**settings.JUQUE_STORAGE['options'])
 
 # TODO: This list should probably be shortened. I will need to tweak it after experimenting with a larger sample.
 UNIMPORTANT_WORDS = ('a', 'an', 'be', 'and', 'in', 'is', 'it', 'of', 'on', 'or', 'so', 'the', 'to')
@@ -107,53 +102,60 @@ def retag_track(track):
             tags[tag] = track.genre.name
     tags.save(track.file_path)
 
-def update_track(track, autocorrect=True, update_artist=True, update_album=True):
-    info = get_track_info(track.artist_name, track.name, autocorrect=autocorrect)
-    if autocorrect:
-        if 'artist' in info and 'name' in info['artist']:
-            track.artist_name = info['artist']['name'].strip()
-        if 'album' in info and 'title' in info['album']:
-            track.album_name = info['album']['title'].strip()
-        if 'name' in info:
-            track.name = info['name'].strip()
+def update_album(album, autocorrect=True):
+    info = get_album_info(album.artist.name, album.name, autocorrect=autocorrect)
+    if 'name' in info:
+        album.scrobbled_name = info['name']
     if 'mbid' in info:
-        track.musicbrainz_id = info['mbid'].strip()
-    if 'album' in info and '@attr' in info['album'] and 'position' in info['album']['@attr']:
-        try:
-            track.track_number = int(info['album']['@attr']['position'])
-        except:
-            pass
-    # We need to call save() so the related Artist and Album objects are created/updated as needed.
-    track.save()
-    if update_artist and 'artist' in info and 'mbid' in info['artist']:
-        track.artist.musicbrainz_id = info['artist']['mbid'].strip()
-        track.artist.save()
-    if update_album and 'album' in info:
-        if 'mbid' in info['album']:
-            track.album.musicbrainz_id = info['album']['mbid'].strip()
-        if not track.album.artwork_path and 'image' in info['album']:
-            image_urls = {}
-            for i in info['album']['image']:
-                image_urls[i['size']] = i['#text']
-            # Try to get the largest album artwork we can.
-            for s in ('mega', 'extralarge', 'large', 'medium', 'small'):
-                try:
-                    r = requests.get(image_urls[s])
-                    mime = r.headers['Content-Type'].split(';')[0]
-                    logger.debug('Downloaded %s for %s', image_urls[s], track.album_name)
-                    ext = mimetypes.guess_extension(mime)
-                    # What a ridiculous default extension for image/jpeg.
-                    if ext == '.jpe':
-                        ext = '.jpg'
-                    path = 'album-art/%s%s' % (track.album.pk, ext)
-                    if artwork_storage.exists(path):
-                        artwork_storage.delete(path)
-                        logger.debug('Deleted existing artwork at %s', path)
-                    track.album.artwork_path = artwork_storage.save(path, ContentFile(r.content))
-                    break
-                except:
-                    pass
-        track.album.save()
+        album.musicbrainz_id = info['mbid']
+    try:
+        s = info['releasedate'].strip().split(',')[0]
+        album.release_date = datetime.datetime.strptime(s, '%d %b %Y').date()
+    except:
+        pass
+    if 'artist' in info:
+        album.artist.scrobbled_name = info['artist']
+    if 'tracks' in info and 'track' in info['tracks'] and isinstance(info['tracks']['track'], (list, tuple)):
+        album.total_tracks = len(info['tracks']['track'])
+        track_info = {}
+        for t in info['tracks']['track']:
+            if 'artist' in t and t['artist']['mbid'] and album.artist.scrobbled_name == t['artist']['name']:
+                album.artist.musicbrainz_id = t['artist']['mbid']
+            match = slugify(t['name'], strip_words=True)
+            # Only store the first matching track information. Sometimes the later matches are LP versions and such.
+            # Maybe someday, investigate how to better match tracks (duration, fuzzy name, etc).
+            if match not in track_info:
+                track_info[match] = t
+        for track in album.tracks.filter(match_name__in=track_info.keys()):
+            t = track_info[track.match_name]
+            track.scrobbled_name = t['name']
+            if 'mbid' in t:
+                track.musicbrainz_id = t['mbid']
+            if '@attr' in t and 'rank' in t['@attr']:
+                track.track_number = int(t['@attr']['rank'])
+            track.save(check_relations=False)
+    if not album.artwork_path and 'image' in info:
+        image_urls = {}
+        for i in info['image']:
+            image_urls[i['size']] = i['#text']
+        # Try to get the largest album artwork we can.
+        for s in ('mega', 'extralarge', 'large', 'medium', 'small'):
+            try:
+                r = requests.get(image_urls[s])
+                mime = r.headers['Content-Type'].split(';')[0]
+                logger.debug('Downloaded %s for %s', image_urls[s], album)
+                # Just save it to the right directory for now, the Album object will move it as necessary.
+                path = os.path.join(album.artist.name, album.name, 'artwork.tmp')
+                if library_storage.exists(path):
+                    library_storage.delete(path)
+                    logger.debug('Deleted existing artwork at %s', path)
+                album.artwork_type = mime
+                album.artwork_path = library_storage.save(path, ContentFile(r.content))
+                break
+            except:
+                pass
+    album.artist.save()
+    album.save()
 
 def create_track(file_path, owner, copy=None):
     from juque.library.models import Track
@@ -192,14 +194,15 @@ def create_track(file_path, owner, copy=None):
         file_managed=copy,
         file_type=meta.mime[0],
     )
-    if copy:
-        ext = os.path.splitext(track.file_path)[1]
-        new_path = 'tracks/%s%s' % (track.pk, ext)
-        with open(file_path, 'rb') as f:
-            track.file_path = library_storage.save(new_path, File(f))
-        track.save()
-    if settings.LASTFM_ENABLE and track.artist:
-        update_track(track)
+    # If the album doesn't have any artwork yet, try to pull it out of the tags.
+    if track.album and not track.album.artwork_path:
+        try:
+            path = os.path.join(track.artist_name, track.album_name, 'artwork.tmp')
+            track.album.artwork_type, data = extract_artwork(meta.tags)
+            track.album.artwork_path = library_storage.save(path, ContentFile(data))
+            track.album.save()
+        except:
+            pass
     return track
 
 def scan_directory(dir_path, owner=None):
@@ -210,8 +213,11 @@ def scan_directory(dir_path, owner=None):
             _base, ext = os.path.splitext(name)
             if ext[1:].lower() in settings.JUQUE_SCAN_EXTENSIONS:
                 file_path = os.path.abspath(os.path.join(root, name))
-                track = create_track(file_path, owner)
-                logger.info('Added track: %s', track)
+                try:
+                    track = create_track(file_path, owner)
+                    logger.info('Added track: %s', track)
+                except:
+                    logger.exception('Error adding: %s', file_path)
 
 class RangeFileWrapper (object):
     def __init__(self, filelike, blksize=8192, offset=0, length=None):
@@ -248,7 +254,7 @@ def render_thumbnail(album):
     data = cache.get(cache_key)
     if data:
         return data
-    im = Image.open(artwork_storage.path(album.artwork_path))
+    im = Image.open(library_storage.path(album.artwork_path))
     thumb = Image.new('RGB', (640, 640))
     w, h = im.size
     if w >= h:
