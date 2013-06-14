@@ -5,10 +5,12 @@
         <tr>
             <th><input type="checkbox" class="select-all" /></th>
             <th>Track</th>
+            <th>Length</th>
             <th>Artist</th>
             <th>Album</th>
             <th>Genre</th>
-            <th>Length</th>
+            <th>Play Count</th>
+            <th class="right">Added</th>
         </tr>
     </thead>
     <tbody class="tracks">
@@ -16,10 +18,16 @@
         <tr>
             <td><input type="checkbox" class="track-select" value="{{ track.pk }}" /></td>
             <td><a class="play" data-track-id="{{ track.pk }}" data-track-url="{{ track.url }}" data-artist="{{ track.artist }}" data-title="{{ track }}" data-cover-url="{{ track.album.artwork_url }}" href="{% url "track-edit" track_id=track.pk %}"><i class="icon-play-circle"></i> {{ track }}</a></td>
+            <td>{{ track.length|track_length }}</td>
             <td>{% if track.artist and track.artist.slug %}<a href="{% url "library-artist" slug=track.artist.slug %}">{{ track.artist }}</a>{% else %}{{ track.artist|default:"" }}{% endif %}</td>
             <td>{{ track.album|default:"" }}</td>
             <td>{{ track.genre|default:"" }}</td>
-            <td>{{ track.length|track_length }}</td>
+            <td>{{ track.play_count }}</td>
+            <td class="right">{{ track.date_added|date:"F j, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8"><em>No matching tracks were found.</em></td>
         </tr>
         {% endfor %}
     </tbody>
@@ -53,15 +61,15 @@
 <div class="pagination pagination-right">
     <ul>
         {% if page.has_previous %}
-        <li><a class="filter" href="#page-{{ page.previous_page_number }}" data-query='{"p": {{ page.previous_page_number }}, "q": "{{ query.q }}", "u": "{{ query.u }}", "g": "{{ query.g }}"}'>&laquo;</a></li>
+        <li><a class="filter" href="#page-{{ page.previous_page_number }}" data-query='{"p": {{ page.previous_page_number }}, "q": "{{ query.q }}", "pl": "{{ query.pl }}", "u": "{{ query.u }}", "g": "{{ query.g }}"}'>&laquo;</a></li>
         {% else %}
         <li class="disabled"><a href="">&laquo;</a></li>
         {% endif %}
         {% for p in page_range %}
-        <li{% if p == page.number %} class="disabled"{% endif %}><a class="filter" href="#page-{{ p }}" data-query='{"p": {{ p }}, "q": "{{ query.q }}", "u": "{{ query.u }}", "g": "{{ query.g }}"}'>{{ p }}</a></li>
+        <li{% if p == page.number %} class="disabled"{% endif %}><a class="filter" href="#page-{{ p }}" data-query='{"p": {{ p }}, "q": "{{ query.q }}", "pl": "{{ query.pl }}", "u": "{{ query.u }}", "g": "{{ query.g }}"}'>{{ p }}</a></li>
         {% endfor %}
         {% if page.has_next %}
-        <li><a class="filter" href="#page-{{ page.next_page_number }}" data-query='{"p": {{ page.next_page_number }}, "q": "{{ query.q }}", "u": "{{ query.u }}", "g": "{{ query.g }}"}'>&raquo;</a></li>
+        <li><a class="filter" href="#page-{{ page.next_page_number }}" data-query='{"p": {{ page.next_page_number }}, "q": "{{ query.q }}", "pl": "{{ query.pl }}", "u": "{{ query.u }}", "g": "{{ query.g }}"}'>&raquo;</a></li>
         {% else %}
         <li class="disabled"><a href="">&raquo;</a></li>
         {% endif %}

@@ -1,46 +1,7 @@
-body { padding-top: 60px; }
+body { padding: 60px 0px; font-family: 'Oxygen', 'Helvetica', sans-serif; }
 .nowrap { white-space: nowrap; }
 .right { text-align: right !important; }
 
-div.artwork { position: relative; }
-div.artwork img { display: block; width: 100%; }
-div.artwork > div.overlay {
-    background-color: rgba(0, 0, 0, 0.6);
-    color: white;
-    position: absolute;
-    bottom: 0px;
-    left: 0px;
-    width: 100%;
-    height: 3.5em;
-}
-div.artwork .track {
-    position: absolute;
-    top: 0px;
-    left: 5px;
-    right: 5px;
-    padding: 0px 0.5em;
-    height: 2em;
-    line-height: 2em;
-    font-size: 110%;
-    font-weight: bold;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-div.artwork .artist {
-    position: absolute;
-    top: 2em;
-    left: 5px;
-    right: 5px;
-    padding: 0px 0.5em;
-    font-size: 90%;
-    height: 1.5em;
-    line-height: 1.5em;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-#player { width: 100%; display: block; margin-bottom: 30px; }
 input.track-select, input.select-all { position: relative; top: -3px; }
 
 span.query-track { display: block; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }

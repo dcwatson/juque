@@ -41,9 +41,10 @@ $(function() {
             if(obj.type == 'track') {
                 var player = document.getElementById('player');
                 if(player) {
-                    $('div.artwork img').attr('src', obj.artwork_url);
-                    $('div.artwork .track').text(obj.name);
-                    $('div.artwork .artist').text(obj.artist);
+                    var now = obj.artist + ' ' + String.fromCharCode(8212) + ' ' + obj.name;
+                    $('#artwork').attr('src', obj.artwork_url);
+                    $('#now-playing').text(now);
+
                     $(player).attr('src', obj.url);
                     player.play();
                     $.ajax({

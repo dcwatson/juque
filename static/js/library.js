@@ -36,11 +36,11 @@ $(function() {
     $('body').on('click', 'a.play', function(e) {
         var url = $(this).data('track-url');
         var id = $(this).data('track-id');
+        var now = $(this).data('artist') + ' ' + String.fromCharCode(8212) + ' ' + $(this).data('title');
 
-        $('div.artwork img').attr('src', $(this).data('cover-url'));
-        $('div.artwork .track').text($(this).data('title'));
-        $('div.artwork .artist').text($(this).data('artist'));
-
+        $('#artwork').attr('src', $(this).data('cover-url'));
+        $('#now-playing').text(now);
+        
         var player = document.getElementById('player');
         $(player).attr('src', url);
         player.play();

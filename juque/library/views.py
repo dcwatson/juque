@@ -65,6 +65,7 @@ def ajax_page(request):
     query = request.GET.get('q', '').strip()
     genre_id = request.GET.get('g', '').strip()
     user_id = request.GET.get('u', '').strip()
+    playlist_id = request.GET.get('pl', '').strip()
     try:
         page_num = int(request.GET['p'])
     except:
@@ -74,6 +75,8 @@ def ajax_page(request):
         qs = qs.filter(genre__pk=genre_id)
     if user_id:
         qs = qs.filter(owner__pk=user_id)
+    if playlist_id:
+        qs = qs.filter(playlists__pk=playlist_id)
     if query:
         q_obj = Q(name__icontains=query) | Q(artist__name__icontains=query) | Q(album__name__icontains=query)
         qs = qs.filter(q_obj)
@@ -89,6 +92,7 @@ def ajax_page(request):
             'q': query,
             'u': user_id,
             'g': genre_id,
+            'pl': playlist_id,
         },
         'playlists': list(Playlist.objects.all()),
     })
@@ -102,11 +106,12 @@ def ajax_autocomplete(request):
     return HttpResponse(json.dumps(values), content_type='applcation/json')
 
 @login_required
-def index(request, genre=None, owner=None):
+def index(request, genre=None, owner=None, playlist=None):
     return render(request, 'library/index.html', {
         'q': request.GET.get('q', '').strip(),
         'genres': Genre.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks')[:10],
-        'users': User.objects.annotate(num_tracks=Count('tracks')).order_by('-num_tracks'),
+        'users': User.objects.annotate(num_tracks=Count('tracks')),
+        'playlists': Playlist.objects.annotate(num_tracks=Count('tracks')),
     })
 
 @login_required
@@ -134,6 +139,11 @@ def genre(request, slug):
 def user(request, uid):
     owner = get_object_or_404(User, pk=uid)
     return index(request, owner=owner)
+
+@login_required
+def playlist(request, playlist_id):
+    pl = get_object_or_404(Playlist, pk=playlist_id)
+    return index(request, playlist=pl)
 
 def album_thumbnail(request, album_id):
     album = get_object_or_404(Album, pk=album_id)

@@ -8,29 +8,61 @@
 <script src="{{ STATIC_URL }}js/library.js"></script>
 {% endblock %}
 
+{% block css %}
+<style>
+    .playing {
+        position: fixed;
+        bottom: 0px;
+        left: 0;
+        right: 0;
+        height: 40px;
+        background: -webkit-linear-gradient(#eee, #d1d1d1);
+        background-color: #e3e3e3;
+        border-top: 1px solid #ccc;
+        line-height: 41px;
+        text-transform: uppercase;
+    }
+    #artwork { float: left; margin: 10px 10px 10px 20px; width: 20px; height: 20px; }
+    #player { display: block; float: right; width: 30%; margin: 7px 20px 10px 0px; }
+    .nav-list { margin-bottom: 20px; }
+</style>
+{% endblock %}
+
+{% block post-container %}
+<div class="playing">
+    <img id="artwork" src="{{ STATIC_URL }}img/cover.png" alt="Now Playing" />
+    <span id="now-playing">N/A</span>
+    <audio id="player" controls></audio>
+</div>
+{% endblock %}
+
 {% block content %}
 <div class="row-fluid">
     <div class="span2">
-        <div class="artwork">
-            <img src="{{ STATIC_URL }}img/cover.png" alt="" />
-            <div class="overlay">
-                <div class="track">Now Playing</div>
-                <div class="artist">-</div>
-            </div>
-        </div>
-        <audio id="player" controls></audio>
+        {% if users|length > 1 %}
         <ul class="nav nav-list">
             <li class="nav-header">Owner</li>
             {% for u in users %}
             <li><a class="filter" href="{% url "library-user" uid=u.pk %}" data-query='{"u": {{ u.pk }}}'>{{ u }} ({{ u.num_tracks }})</a></li>
             {% endfor %}
         </ul>
-        <ul class="nav nav-list" style="margin-top:20px;">
+        {% endif %}
+        {% if playlists %}
+        <ul class="nav nav-list">
+            <li class="nav-header">Playlists</li>
+            {% for p in playlists %}
+            <li><a class="filter" href="{% url "library-playlist" playlist_id=p.pk %}" data-query='{"pl": {{ p.pk }}}'>{{ p }} ({{ p.num_tracks }})</a></li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% if genres %}
+        <ul class="nav nav-list">
             <li class="nav-header">Popular Genres</li>
             {% for g in genres %}
             <li><a class="filter" href="{% url "library-genre" slug=g.slug %}" data-query='{"g": {{ g.pk }}}'>{{ g }} ({{ g.num_tracks }})</a></li>
             {% endfor %}
         </ul>
+        {% endif %}
     </div>
     <div class="span10">
         <div id="message"></div>
