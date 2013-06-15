@@ -9,7 +9,7 @@ from django.db import connections
 from juque.core.models import User
 from juque.library.models import Track, Artist, Album, Genre
 from juque.library.forms import TrackForm, common_form_factory
-from juque.library.utils import RangeFileWrapper, render_thumbnail, get_query_html
+from juque.library.utils import RangeFileWrapper, render_thumbnail, get_query_html, library_storage
 from juque.playlists.models import Playlist
 from bootstrap.utils import local_page_range
 from wsgiref.util import FileWrapper
@@ -256,8 +256,9 @@ def cleanup_tracks(request):
 def track_stream(request, track_id, extension):
     track = get_object_or_404(Track, pk=track_id)
     if track.file_managed:
-        return HttpResponse('Cannot stream this track.', status=500)
-    fp = open(track.file_path, 'rb')
+        fp = library_storage.open(track.file_path, 'rb')
+    else:
+        fp = open(track.file_path, 'rb')
     range_header = request.META.get('HTTP_RANGE', '').strip()
     range_match = range_re.match(range_header)
     if range_match:

@@ -1,4 +1,8 @@
 var last_query = {};
+var player = new MediaElementPlayer('#player', {
+    startVolume: 1,
+    audioWidth: 600
+});
 
 function load_page(query) {
     query = query || last_query;
@@ -41,8 +45,7 @@ $(function() {
         $('#artwork').attr('src', $(this).data('cover-url'));
         $('#now-playing').text(now);
         
-        var player = document.getElementById('player');
-        $(player).attr('src', url);
+        player.setSrc(url);
         player.play();
 
         $.ajax({

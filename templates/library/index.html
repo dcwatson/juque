@@ -5,25 +5,33 @@
 <script>
     var page_url = '{% url "ajax-page" %}';
 </script>
+<script src="{{ STATIC_URL }}mediaelement/mediaelement-and-player.min.js"></script>
 <script src="{{ STATIC_URL }}js/library.js"></script>
 {% endblock %}
 
 {% block css %}
+<link rel="stylesheet" href="{{ STATIC_URL }}/mediaelement/mediaelementplayer.min.css" />
 <style>
     .playing {
         position: fixed;
-        bottom: 0px;
         left: 0;
         right: 0;
-        height: 40px;
-        background: -webkit-linear-gradient(#eee, #d1d1d1);
-        background-color: #e3e3e3;
-        border-top: 1px solid #ccc;
-        line-height: 41px;
+        bottom: 0;
+        height: 30px;
+        background-color: #000;
+        background: -webkit-linear-gradient(#222, #000);
+        background: -moz-linear-gradient(#222, #000);
+        line-height: 30px;
         text-transform: uppercase;
+        z-index: 1000;
+        padding-left: 40px;
+        color: #999;
+        font-size: 90%;
+        box-shadow: 0px 0px 5px #222;
     }
-    #artwork { float: left; margin: 10px 10px 10px 20px; width: 20px; height: 20px; }
-    #player { display: block; float: right; width: 30%; margin: 7px 20px 10px 0px; }
+    #player { display: none; }
+    #artwork { float: left; position: absolute; top: 0; left: 0; width: 30px; height: 30px; }
+    .mejs-container { float: right; z-index: 1001; }
     .nav-list { margin-bottom: 20px; }
 </style>
 {% endblock %}
@@ -32,7 +40,10 @@
 <div class="playing">
     <img id="artwork" src="{{ STATIC_URL }}img/cover.png" alt="Now Playing" />
     <span id="now-playing">N/A</span>
-    <audio id="player" controls></audio>
+    <audio id="player" controls="controls">
+        <source src="{{ STATIC_URL }}empty.mp3" />
+        <source src="{{ STATIC_URL }}empty.ogg" />
+    </audio>
 </div>
 {% endblock %}
 

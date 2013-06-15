@@ -171,9 +171,11 @@ class Track (MatchModel):
         super(Track, self).save(**kwargs)
 
     def url(self):
-        if self.file_managed:
+        if not settings.JUQUE_STORAGE_LOCAL:
+            # If the media isn't stored locally, return the URL from the storage.
             return library_storage.url(self.file_path)
         else:
+            # Otherwise, we'll use our streaming view.
             ext = os.path.splitext(self.file_path)[1][1:]
             return reverse('track-stream', kwargs={'track_id': self.pk, 'extension': ext})
 

@@ -145,6 +145,7 @@ JUQUE_STORAGE = {
         'base_url': MEDIA_URL,
     },
 }
+JUQUE_STORAGE_LOCAL = True
 
 LASTFM_ENABLE = False
 LASTFM_ENDPOINT = 'http://ws.audioscrobbler.com/2.0/'

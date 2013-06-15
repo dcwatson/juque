@@ -2,6 +2,8 @@ body { padding: 60px 0px; font-family: 'Oxygen', 'Helvetica', sans-serif; }
 .nowrap { white-space: nowrap; }
 .right { text-align: right !important; }
 
+.navbar-inverse.navbar-fixed-top { box-shadow: 0px 0px 5px #222; }
+
 input.track-select, input.select-all { position: relative; top: -3px; }
 
 span.query-track { display: block; overflow: hidden; text-overflow: ellipsis; font-weight: bold; }
