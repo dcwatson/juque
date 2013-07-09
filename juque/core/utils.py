@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.db import models
+from django.core.exceptions import ImproperlyConfigured
 from Crypto.Cipher import AES
 import base64
 
@@ -8,6 +9,9 @@ class EncryptedTextField (models.Field):
 
     def __init__(self, *args, **kwargs):
         self.prefix = kwargs.pop('prefix', '$aes-base64$')
+        # TODO: key and/or keyfile args
+        if len(settings.SECRET_KEY) < 32:
+            raise ImproperlyConfigured('Your SECRET_KEY setting must be at least 32 characters long to use EncryptedTextField.')
         self.cipher = AES.new(settings.SECRET_KEY[:32])
         super(EncryptedTextField, self).__init__(*args, **kwargs)
 

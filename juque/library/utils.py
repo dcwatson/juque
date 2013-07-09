@@ -13,6 +13,7 @@ from StringIO import StringIO
 import mimetypes
 import datetime
 import requests
+import hashlib
 import logging
 import re
 import os
@@ -144,13 +145,11 @@ def update_album(album, autocorrect=True):
                 r = requests.get(image_urls[s])
                 mime = r.headers['Content-Type'].split(';')[0]
                 logger.debug('Downloaded %s for %s', image_urls[s], album)
-                # Just save it to the right directory for now, the Album object will move it as necessary.
-                path = os.path.join(album.artist.name, album.name, 'artwork.tmp')
                 if library_storage.exists(path):
                     library_storage.delete(path)
                     logger.debug('Deleted existing artwork at %s', path)
                 album.artwork_type = mime
-                album.artwork_path = library_storage.save(path, ContentFile(r.content))
+                album.artwork_path = library_storage.save(album.get_expected_path(), ContentFile(r.content))
                 break
             except:
                 pass
@@ -194,12 +193,15 @@ def create_track(file_path, owner, copy=None):
         file_managed=copy,
         file_type=meta.mime[0],
     )
+    # If we're copying the track, update the file_path to the copied path.
+    if copy:
+        track.file_path = library_storage.save(track.get_expected_path(), File(open(file_path, 'rb')))
+        track.save(check_relations=False)
     # If the album doesn't have any artwork yet, try to pull it out of the tags.
     if track.album and not track.album.artwork_path:
         try:
-            path = os.path.join(track.artist_name, track.album_name, 'artwork.tmp')
             track.album.artwork_type, data = extract_artwork(meta.tags)
-            track.album.artwork_path = library_storage.save(path, ContentFile(data))
+            track.album.artwork_path = library_storage.save(track.album.get_expected_path(), ContentFile(data))
             track.album.save()
         except:
             pass

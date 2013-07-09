@@ -7,6 +7,7 @@ from juque.core.models import User
 from juque.library.utils import slugify, library_storage
 import mimetypes
 import logging
+import hashlib
 import os
 import re
 
@@ -20,6 +21,9 @@ FILE_TYPE_CHOICES = (
 FILE_EXTENSIONS = {
     'audio/mp3': 'mp3',
     'audio/mp4': 'm4a',
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/gif': 'gif',
 }
 
 class MatchModel (models.Model):
@@ -46,36 +50,16 @@ class Artist (MatchModel):
 
 class Album (MatchModel):
     artist = models.ForeignKey(Artist, related_name='albums')
-    artwork_type = models.CharField(max_length=100, choices=FILE_TYPE_CHOICES, editable=False)
     artwork_path = models.TextField(editable=False)
+    artwork_type = models.CharField(max_length=100, choices=FILE_TYPE_CHOICES, editable=False)
     total_tracks = models.IntegerField(default=0)
     release_date = models.DateField(null=True, blank=True)
 
-    def save(self, **kwargs):
-        self.update_artwork_path()
-        super(Album, self).save(**kwargs)
-
-    def update_artwork_path(self):
-        if not self.artwork_path:
-            return
-        ext = mimetypes.guess_extension(self.artwork_type)
-        if ext == '.jpe':
-            ext = '.jpg'
-        parts = [
-            self.artist.name,
-            self.name,
-            'artwork%s' % ext,
-        ]
-        new_path = os.path.join(*parts)
-        # TODO: check if the filesystem is case-sensitive. OSX is not.
-        if self.artwork_path.lower() != new_path.lower():
-            logger.debug('Moving %s to %s', self.artwork_path, new_path)
-            fp = library_storage.open(self.artwork_path, 'rb')
-            old_path = self.artwork_path
-            if library_storage.exists(new_path):
-                library_storage.delete(new_path)
-            self.artwork_path = library_storage.save(new_path, fp)
-            library_storage.delete(old_path)
+    def get_expected_path(self):
+        assert self.pk is not None
+        h = hashlib.md5(str(self.pk) + settings.SECRET_KEY).hexdigest()[:2]
+        name = '%s.%s' % (self.pk, FILE_EXTENSIONS.get(self.artwork_type, 'dat'))
+        return os.path.join('artwork', h, name)
 
     def artwork_url(self):
         if self.artwork_path:
@@ -117,36 +101,14 @@ class Track (MatchModel):
     # Other stuff
     play_count = models.IntegerField(default=0, editable=False)
 
-    def update_file_path(self):
-        parts = []
-        if self.artist_name:
-            parts.append(self.artist_name)
-        if self.album_name:
-            parts.append(self.album_name)
-        parts.append('%s.%s' % (self.name, FILE_EXTENSIONS[self.file_type]))
-        new_path = os.path.join(*parts)
-        # TODO: check if the filesystem is case-sensitive. OSX is not.
-        if self.file_path.lower() != new_path.lower():
-            logger.debug('Moving %s to %s', self.file_path, new_path)
-            stored = False
-            if self.file_path.startswith('/'):
-                # If the path is an absolute local path, just read it normally (not using storage).
-                fp = File(open(self.file_path, 'rb'))
-            else:
-                # Otherwise, we need to do everything through storages.
-                fp = library_storage.open(self.file_path, 'rb')
-                stored = True
-            old_path = self.file_path
-            if library_storage.exists(new_path):
-                library_storage.delete(new_path)
-            self.file_path = library_storage.save(new_path, fp)
-            # If the file was previously managed by a storage backend, we can delete it now.
-            if stored:
-                library_storage.delete(old_path)
+    def get_expected_path(self):
+        assert self.pk is not None
+        h = hashlib.md5(str(self.pk) + settings.SECRET_KEY).hexdigest()[:2]
+        name = '%s.%s' % (self.pk, FILE_EXTENSIONS.get(self.file_type, 'dat'))
+        return os.path.join('tracks', h, name)
 
     def save(self, **kwargs):
-        check_relations = kwargs.pop('check_relations', True)
-        if check_relations:
+        if kwargs.pop('check_relations', True):
             if self.artist_name:
                 self.artist, created = Artist.objects.get_or_create(slug=slugify(self.artist_name), defaults={'name': self.artist_name})
                 if created:
@@ -165,8 +127,6 @@ class Track (MatchModel):
                     logger.debug('Created new Genre: %s', self.genre)
             else:
                 self.genre = None
-        if self.file_managed:
-            self.update_file_path()
         self.date_modified = timezone.now()
         super(Track, self).save(**kwargs)
 
